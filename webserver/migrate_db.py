@@ -172,10 +172,12 @@ def compare_and_migrate(engine):
 
     # Compare and generate migration operations
     migrations_needed = []
+    missing_tables = []
 
     for table_name, columns in model_columns.items():
         if table_name not in db_columns:
-            logger.info(f"Table '{table_name}' does not exist, will be created later")
+            logger.info(f"Table '{table_name}' does not exist, will be created")
+            missing_tables.append(table_name)
             continue
 
         for col_name, col_def in columns.items():
@@ -190,9 +192,19 @@ def compare_and_migrate(engine):
                 )
 
     # Perform migration
-    if not migrations_needed:
+    if not migrations_needed and not missing_tables:
         logger.info("Database schema is up to date, no migration needed")
         return True
+
+    if missing_tables:
+        try:
+            missing = set(missing_tables)
+            tables = [table for table in models.Base.metadata.sorted_tables if table.name in missing]
+            models.Base.metadata.create_all(engine, tables=tables, checkfirst=True)
+            logger.info("Created missing tables: %s", ", ".join(missing_tables))
+        except Exception as e:
+            logger.error("Failed to create missing tables: %s", e)
+            return False
 
     logger.info(f"Found {len(migrations_needed)} columns to migrate:")
     for migration in migrations_needed:
@@ -312,7 +324,7 @@ def migrate_data(source_url, target_url, force=False):
     with the total existing row count so the caller can prompt for confirmation.
     Pass force=True to skip the check and overwrite existing data.
     """
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
 
     logger.info(f"Migrating data: {source_url!r} -> {target_url!r}")
 
@@ -340,8 +352,9 @@ def migrate_data(source_url, target_url, force=False):
             if is_mysql_target:
                 tgt.execute(text("SET FOREIGN_KEY_CHECKS=0"))
 
+            source_tables = set(inspect(source_engine).get_table_names())
             for table in models.Base.metadata.sorted_tables:
-                rows = src.execute(table.select()).fetchall()
+                rows = src.execute(table.select()).fetchall() if table.name in source_tables else []
                 tgt.execute(table.delete())
                 if rows:
                     tgt.execute(table.insert(), [dict(r._mapping) for r in rows])

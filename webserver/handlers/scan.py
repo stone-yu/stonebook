@@ -2,7 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import os
 import traceback
+from pathlib import Path
 
 import sqlalchemy
 import tornado
@@ -16,7 +18,23 @@ from webserver.services.scan import ScanService
 
 CONF = loader.get_settings()
 SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
-SCAN_DIR_PREFIX = "/data/"  # 限定扫描必须在/data/目录下，以防黑客扫描到其他系统目录
+SCAN_DIR_PREFIX = "/imports/"  # 扫描来源固定在独立挂载，避免访问应用状态或正式书库
+
+
+def scan_path_is_allowed(path, environ=None):
+    environ = os.environ if environ is None else environ
+    if environ.get("TALEBOOK_PROFILE", "").strip().lower() == "local":
+        local_root = environ.get("TALEBOOK_LOCAL_ROOT")
+        if not local_root:
+            return False
+        allowed_root = Path(local_root).expanduser() / "imports"
+    else:
+        allowed_root = Path(SCAN_DIR_PREFIX)
+    try:
+        Path(path).resolve().relative_to(allowed_root.resolve())
+        return True
+    except ValueError:
+        return False
 
 
 class Scanner:
@@ -79,12 +97,12 @@ class Scanner:
             query = query.filter(ScanFile.hash == hashlist)
         return query
 
-    def run_import(self, hashlist, delete_after=False):
+    def run_import(self, hashlist, delete_after=False, auto_categorize=True):
         if self.resume_last_import():
             return 1
 
         total = self.build_query(hashlist).count()
-        ScanService().do_import(hashlist, self.user_id, delete_after)
+        ScanService().do_import(hashlist, self.user_id, delete_after, auto_categorize)
         return total
 
     def import_status(self):
@@ -169,6 +187,8 @@ class ScanList(BaseHandler):
                 "author": s.author,
                 "publisher": s.publisher,
                 "tags": s.tags,
+                "category_path": list((s.data or {}).get("category_path") or []),
+                "category_error": (s.data or {}).get("category_error", ""),
                 "status": s.status,
                 "book_id": s.book_id,
                 "create_time": (s.create_time.strftime("%Y-%m-%d %H:%M:%S") if s.create_time else "N/A"),
@@ -198,7 +218,7 @@ class ScanRun(BaseHandler):
     @is_admin
     def post(self):
         path = CONF["scan_upload_path"]
-        if not path.startswith(SCAN_DIR_PREFIX):
+        if not scan_path_is_allowed(path):
             return {
                 "err": "params.error",
                 "msg": _("书籍导入目录必须是%s的子目录") % SCAN_DIR_PREFIX,
@@ -242,13 +262,14 @@ class ImportRun(BaseHandler):
         req = tornado.escape.json_decode(self.request.body)
         hashlist = req["hashlist"]
         delete_after = req.get("delete_after", False)
+        auto_categorize = req.get("auto_categorize", True)
         if not hashlist:
             return {"err": "params.error", "msg": _("参数错误")}
         if hashlist == "all":
             hashlist = None
 
         m = Scanner(self.db, self.session, self.user_id())
-        total = m.run_import(hashlist, delete_after)
+        total = m.run_import(hashlist, delete_after, auto_categorize)
         if total == 0:
             return {"err": "empty", "msg": _("没有等待导入书库的书籍！")}
         return {"err": "ok", "msg": _("扫描成功")}

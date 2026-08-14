@@ -21,6 +21,9 @@ import sys
 
 
 DATA_DIR = os.environ.get("TALEBOOK_DATA_DIR", "/data")
+IMPORTS_DIR = os.environ.get("TALEBOOK_IMPORTS_DIR", "/imports")
+LIBRARY_DIR = os.environ.get("TALEBOOK_LIBRARY_DIR", "/library")
+AUDIOBOOKS_DIR = os.environ.get("TALEBOOK_AUDIOBOOKS_DIR", "/audiobooks")
 SERVER_DIR = os.environ.get("TALEBOOK_SERVER_DIR", "/var/www/talebook")
 STATUS_DIR = os.environ.get("TALEBOOK_STATUS_DIR", "/var/www/talebook/status")
 RUN_USER = os.environ.get("TALEBOOK_RUN_USER", "talebook")
@@ -75,19 +78,40 @@ def check_atomic_write(directory):
     return run(cmd)
 
 
+def check_storage_layout():
+    """拒绝仍包含真实数据的 /data/books 旧布局，避免新路径被静默初始化。"""
+    legacy_root = os.path.join(DATA_DIR, "books")
+    if not os.path.isdir(legacy_root):
+        return True, None
+
+    legacy_files = (
+        "calibre-webserver.db",
+        os.path.join("settings", "auto.py"),
+        os.path.join("library", "metadata.db"),
+    )
+    if any(os.path.exists(os.path.join(legacy_root, relative)) for relative in legacy_files):
+        return False, "legacy_storage_layout"
+
+    for name in ("imports", "library", "audiobooks", "progress", "themes", "logo", "ssl", "upload", "convert", "extract"):
+        path = os.path.join(legacy_root, name)
+        if os.path.isdir(path) and any(os.scandir(path)):
+            return False, "legacy_storage_layout"
+
+    return True, None
+
+
 def check_permission():
-    """修复 /data/books 的属主，并校验书库与配置目录的原子写入能力。"""
+    """修复新存储根的属主，并校验持久化写入和同目录原子替换。"""
     permission_file = os.path.join(DATA_DIR, ".permission")
     current = "%s:%s" % (os.environ.get("PUID", "0"), os.environ.get("PGID", "0"))
-    books_dir = os.path.join(DATA_DIR, "books")
-    settings_dir = os.path.join(books_dir, "settings")
+    settings_dir = os.path.join(DATA_DIR, "settings")
     previous = None
     if os.path.exists(permission_file):
         with open(permission_file) as f:
             previous = f.read().strip()
 
     if previous != current:
-        if not run(["chown", "-R", "%s:%s" % (RUN_USER, RUN_USER), books_dir]):
+        if not run(["chown", "-R", "%s:%s" % (RUN_USER, RUN_USER), DATA_DIR, LIBRARY_DIR, AUDIOBOOKS_DIR]):
             return False, "permission_denied"
         with open(permission_file, "w") as f:
             f.write(current)
@@ -95,7 +119,7 @@ def check_permission():
         # settings 很小，标记命中时仍定向修复，避免宿主目录重建或预置文件复制后属主失真。
         return False, "permission_denied"
 
-    for directory in (os.path.join(books_dir, "library"), settings_dir):
+    for directory in (DATA_DIR, LIBRARY_DIR, AUDIOBOOKS_DIR):
         if not check_atomic_write(directory):
             return False, "permission_denied"
 
@@ -124,6 +148,7 @@ def check_update_config():
 
 # 顺序即自检顺序，也是 status.json 里 steps 的顺序
 CHECKS = [
+    ("storage_layout", check_storage_layout),
     ("permission", check_permission),
     ("nginx_config", check_nginx_config),
     ("syncdb", check_syncdb),

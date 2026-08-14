@@ -81,6 +81,12 @@
             </template>
             <v-spacer />
             <v-checkbox
+                v-model="auto_categorize"
+                :label="t('admin.imports.label.autoCategorize')"
+                color="primary"
+                hide-details
+            />
+            <v-checkbox
                 v-model="delete_after_import"
                 :label="t('admin.imports.label.deleteAfterImport')"
                 color="primary"
@@ -188,6 +194,26 @@
                 >{{ item.title }}</a> <br>
                 {{ t('admin.imports.label.author') }}：{{ item.author }}
             </template>
+            <template #item.category_path="{ item }">
+                <v-chip
+                    v-if="item.category_path?.length"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                >
+                    {{ item.category_path.join(' / ') }}
+                </v-chip>
+                <span
+                    v-else
+                    class="text-medium-emphasis"
+                >{{ t('category.uncategorized') }}</span>
+                <div
+                    v-if="item.category_error"
+                    class="text-error text-caption"
+                >
+                    {{ item.category_error }}
+                </div>
+            </template>
         </v-data-table-server>
     </v-card>
 
@@ -211,7 +237,7 @@ store.setNavbar(true);
 
 const filter_type = ref('todo');
 const selected = ref([]);
-const scan_dir = ref('/data/books/imports/');
+const scan_dir = ref('/imports/');
 const search = ref('');
 const items = ref([]);
 const total = ref(0);
@@ -222,6 +248,7 @@ const options = ref({ page: 1, itemsPerPage: 100, sortBy: [{ key: 'create_time',
 const count_todo = ref(0);
 const count_done = ref(0);
 const delete_after_import = ref(false);
+const auto_categorize = ref(true);
 const opdsImportDialogVisible = ref(false);
 
 const scan_status = ref({});
@@ -232,6 +259,7 @@ const headers = computed(() => [
     { title: t('admin.imports.label.status'), key: 'status', sortable: true },
     { title: t('admin.imports.label.path'), key: 'path', sortable: true },
     { title: t('admin.imports.label.scanInfo'), key: 'title', sortable: false },
+    { title: t('admin.imports.label.categoryPreview'), key: 'category_path', sortable: false },
     { title: t('admin.imports.label.time'), key: 'create_time', sortable: true, width: '200px' },
 ]);
 
@@ -309,6 +337,7 @@ const scan_books = () => {
     }).then((rsp) => {
         if (rsp.err !== 'ok') {
             if ($alert) $alert('error', rsp.msg);
+            loading.value = false;
             return;
         }
 
@@ -326,6 +355,9 @@ const scan_books = () => {
             loading.value = true;
             return true;
         });
+    }).catch((error) => {
+        loading.value = false;
+        if ($alert) $alert('error', error?.message || '扫描请求失败');
     });
 };
 
@@ -337,7 +369,8 @@ const import_books = () => {
         method: 'POST',
         body: JSON.stringify({
             hashlist: hashlist,
-            delete_after: delete_after_import.value
+            delete_after: delete_after_import.value,
+            auto_categorize: auto_categorize.value
         }),
     }).then((rsp) => {
         if (rsp.err !== 'ok') {

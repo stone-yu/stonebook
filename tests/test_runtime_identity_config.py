@@ -39,12 +39,13 @@ def test_dockerfile_grants_only_nginx_low_port_capability_and_moves_pid():
 def test_start_scripts_prepare_nginx_runtime_directories():
     for relative_path in ("docker/start.sh", "docker/start-dev.sh"):
         script = read(relative_path)
-        assert "mkdir -p /root/.npm /run/talebook /data/books/ssl" in script
+        assert "/root/.npm /run/talebook" in script
         assert "/run/talebook" in script
-        assert "/data/books/ssl" in script
+        assert "/data/ssl" in script
+        assert "/root/.config/calibre" not in script
         assert "/var/log/nginx" in script
         assert "PUID=0 runs Talebook application processes as root" in script
-        assert "chmod 0600 /data/books/ssl/ssl.key" in script
+        assert "chmod 0600 /data/ssl/ssl.key" in script
 
 
 def test_start_scripts_grant_atomic_nuxt_config_parent_without_recursive_app_chown():
@@ -59,8 +60,8 @@ def test_start_scripts_grant_atomic_nuxt_config_parent_without_recursive_app_cho
 def test_ssr_start_repairs_settings_and_probes_both_mounts_as_application_user():
     script = read("docker/start-dev.sh")
 
-    assert "chown -R talebook:talebook /data/books/settings || exit 1" in script
+    assert "chown -R talebook:talebook /data/settings || exit 1" in script
     assert "gosu talebook:talebook sh -c" in script
-    assert "for directory in /data/books/library /data/books/settings" in script
+    assert "for directory in /data /library /audiobooks" in script
     assert "mktemp" in script
     assert 'mv "$tmp" "$moved"' in script

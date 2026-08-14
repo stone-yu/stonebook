@@ -35,7 +35,7 @@ from webserver.constants import (
 )
 from webserver.handlers.base import BaseHandler, ListHandler, auth, js
 from webserver.i18n import _
-from webserver.models import AudiobookEdition, Item, ReadingState
+from webserver.models import AudiobookEdition, Item, ReadingState, ShelfCategoryBook
 from webserver.plugins.meta import baike, biquge, calibre, douban, douban_v2, neodb, qimao, tomato, xhsd, youshu
 from webserver.plugins.meta.ai.api import KEY as AI_KEY
 from webserver.plugins.meta.ai.api import AIBookApi
@@ -51,6 +51,7 @@ from webserver.services.booksource.metadata import (
     load_builtin_sources,
     metadata_to_evidence,
 )
+from webserver.services.categories import inherit_library_path, remove_book_from_shelf_categories
 from webserver.services.convert import CONVERSION_TARGETS, ConvertService
 from webserver.services.extract import ExtractService
 from webserver.services.mail import MailService
@@ -1652,6 +1653,19 @@ class BookRead(BaseHandler):
 
             pdf_url = urllib.parse.quote_plus(self.api_url + "/api/book/%(id)d.PDF" % book)
             pdf_reader_url = CONF["PDF_VIEWER"] % {"pdf_url": pdf_url}
+            if os.environ.get("TALEBOOK_PROFILE", "").strip().lower() == "local":
+                # Nitro's development proxy follows upstream HTTP redirects
+                # internally. The browser would therefore stay on /read/<id>,
+                # making PDF.js resolve its assets below /read/ and lose the
+                # redirected `file` query. A browser-side redirect preserves
+                # both the viewer base URL and its query string.
+                target = html.escape(pdf_reader_url, quote=True)
+                self.set_header("Content-Type", "text/html; charset=UTF-8")
+                return self.write(
+                    '<!doctype html><html><head><meta charset="utf-8">'
+                    f'<meta http-equiv="refresh" content="0;url={target}"></head>'
+                    f'<body><a href="{target}">打开 PDF 阅读器</a></body></html>'
+                )
             return self.redirect(pdf_reader_url)
 
         if "fmt_txt" in book:
@@ -2297,8 +2311,17 @@ class BookShelf(BaseHandler):
         if not reading_state:
             reading_state = ReadingState(book_id, user_id)
             self.session.add(reading_state)
+        was_on_shelf = reading_state.is_wants()
         reading_state.set_wants(shelf_status)
         self.session.commit()
+        if shelf_status and not was_on_shelf:
+            try:
+                inherit_library_path(self.session, user_id, book_id)
+            except Exception:
+                self.session.rollback()
+                logging.exception("继承全站分类到个人书架失败: reader_id=%s book_id=%s", user_id, book_id)
+        elif not shelf_status:
+            remove_book_from_shelf_categories(self.session, user_id, book_id)
         msg = _("加入书架成功") if shelf_status else _("移除书架成功")
         return {"err": "ok", "msg": msg}
 
@@ -2315,6 +2338,16 @@ class BookShelf(BaseHandler):
         book_ids = [state.book_id for state in reading_states]
         books_dict = {book["id"]: book for book in self.get_books(ids=book_ids)}
         state_dict = {state.book_id: state for state in reading_states}
+        category_rows = (
+            self.session.query(ShelfCategoryBook)
+            .filter(ShelfCategoryBook.reader_id == user_id, ShelfCategoryBook.book_id.in_(book_ids))
+            .all()
+            if book_ids
+            else []
+        )
+        category_map = {}
+        for row in category_rows:
+            category_map.setdefault(row.book_id, []).append(row.category_id)
         shelf_books = []
         for book_id in book_ids:
             book = books_dict.get(book_id)
@@ -2322,6 +2355,7 @@ class BookShelf(BaseHandler):
                 continue
             book_data = utils.BookFormatter(self, book).format()
             book_data["state"] = utils.ReadingStateFormatter.format_reading_state(state_dict[book_id])
+            book_data["shelf_category_ids"] = category_map.get(book_id, [])
             shelf_books.append(book_data)
         return {"err": "ok", "title": _("我的书架"), "total": len(shelf_books), "books": shelf_books}
 

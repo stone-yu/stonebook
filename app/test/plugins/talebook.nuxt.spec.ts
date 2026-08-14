@@ -72,6 +72,17 @@ describe('resolveStatusAlert', () => {
         expect(alert.msg).toContain('/status_page.html');
     });
 
+    it('检测到旧存储布局时要求人工迁移', () => {
+        const alert = resolveStatusAlert({
+            schema: 1,
+            phase: 'failed',
+            steps: [{ name: 'storage_layout', status: 'failed', code: 'legacy_storage_layout' }],
+        });
+        expect(alert.type).toBe('error');
+        expect(alert.msg).toContain('/data/books');
+        expect(alert.msg).toContain('/library');
+    });
+
     it('phase 为 failed 但 code 未知时，展示兜底文案', () => {
         const alert = resolveStatusAlert({
             schema: 1,

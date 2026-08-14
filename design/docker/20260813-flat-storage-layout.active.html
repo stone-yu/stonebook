@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>拆分并扁平化持久化目录 · ACTIVE</title>
+  <style>
+    :root{color-scheme:light;--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#5d687c;--line:#d9e1ec;--accent:#3567a8;--warn:#fff5df;--good:#eaf7ef}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#eef4fb,var(--bg));color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.page{width:min(1080px,calc(100% - 28px));margin:auto;padding:28px 0 56px}.hero,.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(23,32,51,.07)}.hero{padding:30px;margin-bottom:18px}h1{margin:0 0 8px;font-size:clamp(30px,5vw,46px);line-height:1.15}h2{margin:0 0 12px;font-size:22px}h3{margin:18px 0 8px}.sub,.muted{color:var(--muted)}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chip{padding:5px 10px;border-radius:999px;background:#edf2f8;font-size:12px;font-weight:700}.chip.wip{color:#91540b;background:var(--warn)}.card{padding:24px 26px;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.box{border:1px solid var(--line);border-radius:14px;padding:15px}.callout{padding:14px 16px;border-radius:12px;background:var(--warn)}.good{background:var(--good)}code{padding:.12em .35em;border-radius:4px;background:#eef2f7;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}pre{overflow:auto;padding:16px;border-radius:13px;background:#202b3d;color:#f2f5f9;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f5f8fc}.pending{color:#91540b;font-weight:700}ul{padding-left:20px}@media(max-width:680px){.grid{grid-template-columns:1fr}.hero,.card{padding:20px}.page{width:min(100% - 18px,1080px);padding-top:10px}}@media print{body{background:#fff}.hero,.card{box-shadow:none}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="hero">
+    <h1>拆分并扁平化持久化目录</h1>
+    <p class="sub">将应用状态、导入源、Calibre 正式书库和有声书资产拆成四个顶级挂载，消除 <code>/data/books</code> 的混合职责，并明确拒绝旧布局。</p>
+    <div class="chips"><span class="chip">状态：ACTIVE</span><span class="chip">创建日期：2026-08-13</span><span class="chip">所属模块：docker</span><span class="chip">影响范围：docker / webserver / tests / document</span><span class="chip">需求来源：当前 Codex 对话</span></div>
+  </header>
+  <main>
+    <section class="card"><h2>1. 原始诉求</h2><div class="callout">“把目录改一下吧，/data 下面只放 db config 等信息，/imports 作为本地文件扫描来源，/library 作为刮削后的数据。”后续确认采用扁平结构、独立 <code>/audiobooks</code>、持久化 <code>/data/work</code>、可写 <code>/imports</code>，并选择直接破坏性切换。</div></section>
+    <section class="card"><h2>2. 目标与边界</h2><div class="grid"><div class="box"><h3>目标</h3><ul><li><code>/data</code> 只承载应用数据库、配置、日志、进度与工作状态。</li><li><code>/imports</code>、<code>/library</code>、<code>/audiobooks</code> 独立挂载。</li><li>Calibre 配置显式落到 <code>/data/calibre</code>，不再使用 <code>/root/.config/calibre</code>。</li><li>旧布局必须先人工迁移，启动不得静默创建空书库。</li></ul></div><div class="box"><h3>非目标</h3><ul><li>不自动移动、复制或删除旧部署数据。</li><li>不保留旧路径回退。</li><li>不改变 Calibre 管理书籍文件的方式。</li><li>不改变 API 与前端业务交互。</li></ul></div></div></section>
+    <section class="card"><h2>3. 新目录契约</h2><pre>/data/
+├── calibre-webserver.db
+├── settings/  progress/  themes/  logo/  ssl/  calibre/  log/
+└── work/
+    ├── upload/
+    ├── convert/
+    └── extract/
+/imports/       # 原始文件扫描来源，默认可写
+/library/       # Calibre 正式书库，根部为 metadata.db
+/audiobooks/    # 音频、剧本、时间轴、manifest 与版本资产</pre><table><thead><tr><th>配置</th><th>新默认值</th></tr></thead><tbody><tr><td>user_database</td><td>sqlite:////data/calibre-webserver.db</td></tr><tr><td>settings_path / progress_path</td><td>/data/settings / /data/progress</td></tr><tr><td>upload / convert / extract</td><td>/data/work/upload / convert / extract</td></tr><tr><td>scan_upload_path</td><td>/imports</td></tr><tr><td>with_library</td><td>/library</td></tr><tr><td>AUDIOBOOK_PATH</td><td>/audiobooks</td></tr><tr><td>CALIBRE_CONFIG_DIRECTORY</td><td>/data/calibre</td></tr></tbody></table></section>
+    <section class="card"><h2>4. Compose 与启动流程</h2><pre>volumes:
+  - "${TALEBOOK_DATA_DIR:-./data}:/data"
+  - "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
+  - "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
+  - "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"</pre><ol><li>创建并检查四个挂载点。</li><li>在预置数据初始化前检测 <code>/data/books</code> 的真实旧数据。</li><li>命中旧布局时 bootstrap 失败，Nginx 与状态页继续服务并展示迁移目标。</li><li>新布局中只初始化缺失的业务库、配置和 Calibre 书库，不覆盖已有数据。</li><li>分别报告四个目录的权限问题；显式只读的 imports 可启动，但不能删除源文件。</li></ol></section>
+    <section class="card"><h2>5. 人工迁移映射</h2><table><thead><tr><th>旧路径</th><th>新路径</th></tr></thead><tbody><tr><td>/data/books/calibre-webserver.db</td><td>/data/calibre-webserver.db</td></tr><tr><td>/data/books/settings、progress、themes、logo、ssl</td><td>/data 下同名目录</td></tr><tr><td>/data/books/upload、convert、extract</td><td>/data/work 下同名目录</td></tr><tr><td>/data/books/imports</td><td>/imports</td></tr><tr><td>/data/books/library</td><td>/library</td></tr><tr><td>/data/books/audiobooks</td><td>/audiobooks</td></tr><tr><td>/data/log</td><td>/data/log（不变）</td></tr></tbody></table><p class="muted"><code>/root/.config/calibre</code> 不自动迁移；若管理员确有自定义 Calibre 配置，需审查后人工复制到 <code>/data/calibre</code>。</p></section>
+    <section class="card"><h2>6. 风险与回滚</h2><ul><li><strong>破坏性升级：</strong>旧 Compose 不能直接启动新版；通过启动前检测防止误初始化。</li><li><strong>跨挂载原子性：</strong>应用不得假设四个挂载之间支持原子 rename；每类资产只在自身根目录内提交。</li><li><strong>权限：</strong>library、audiobooks 与 data 必须可写；imports 只读时删除源文件操作应给出明确错误。</li><li><strong>回滚：</strong>停服后恢复旧镜像和旧 Compose，并保持旧目录原状；新版不自动改写旧布局。</li></ul></section>
+    <section class="card"><h2>7. 测试计划与结果</h2><div class="callout good"><strong>验证结论：</strong>路径、启动自检、前端错误提示、静态配置和代码质量门禁通过；Docker daemon 不可用，因此镜像构建、四挂载实启与依赖 Calibre 运行时的完整后端回归未执行。</div><table><thead><tr><th>验证</th><th>结果</th></tr></thead><tbody><tr><td><code>.venv/bin/pytest -q tests/test_docker_persistence_config.py tests/test_self_check.py tests/test_runtime_identity_config.py</code></td><td>通过：29 passed in 0.10s。覆盖四挂载、扁平默认值、预置数据分离、旧布局拒绝和三类可写根探测。</td></tr><tr><td>工作区 Node 执行 <code>vitest run test/plugins/talebook.nuxt.spec.ts</code></td><td>通过：8/8；包括 <code>legacy_storage_layout</code> 固定提示。</td></tr><tr><td><code>uvx ruff check ./webserver --no-cache</code> 与 <code>uvx ruff format --diff ./webserver</code></td><td>通过：103 个后端文件格式一致，无 lint 错误。</td></tr><tr><td>ESLint 全量前端</td><td>通过：0 error；193 条既有 warning。</td></tr><tr><td><code>sh -n docker/start.sh</code>、<code>sh -n docker/start-dev.sh</code>、<code>docker-compose config</code></td><td>通过；Compose 正确解析四个 bind mount，仅报告既有 version 字段废弃 warning。</td></tr><tr><td><code>make check-design</code></td><td>通过：105 份方案文档满足路径、状态、HTML 结构和单文件资源约束。</td></tr><tr><td>Docker 构建、实启、<code>make pytest</code></td><td>未执行：本机 Docker API 指向缺失的 Colima socket，daemon 不可用；macOS 本地 Python 也没有项目所需 Calibre 运行时。剩余风险集中在镜像构建阶段和真实挂载权限行为。</td></tr></tbody></table></section>
+    <section class="card"><h2>8. 决策记录</h2><ul><li>2026-08-13：选择直接破坏性切换，不兼容旧路径、不自动迁移。</li><li>2026-08-13：确认扁平 <code>/data</code>、独立 <code>/audiobooks</code>、持久化 <code>/data/work</code>、默认可写 <code>/imports</code>。</li><li>2026-08-13：检测旧布局时明确失败并给出迁移提示，禁止静默创建空书库。</li><li>2026-08-13：实现未偏离已确认方案；因 Docker daemon 不可用保留镜像实启风险，但静态契约、专项测试和代码质量均通过，方案转为 ACTIVE。</li></ul></section>
+  </main>
+</div>
+</body>
+</html>

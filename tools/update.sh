@@ -12,9 +12,9 @@ echo -n "udpate book=${bid} to ISBN[${isbn}] (yes/no) ? "
 read x
 if [[ "$x" = "y" ]]; then
     set -x
-    calibredb set_metadata --with-library /data/books/library/ -f identifiers:isbn:$isbn $bid
+    calibredb set_metadata --with-library /library/ -f identifiers:isbn:$isbn $bid
     curl -d "exam_id=$bid" http://www.talebook.org/book/$bid/update -sv
-    calibredb show_metadata --with-library /data/books/library/ $bid
+    calibredb show_metadata --with-library /library/ $bid
     echo
 fi
 

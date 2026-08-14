@@ -67,6 +67,15 @@ class SettingsLoader(dict):
             logging.error(traceback.format_exc())
             pass
 
+        profile = os.environ.get("TALEBOOK_PROFILE", "").strip().lower()
+        profile_settings = None
+        if profile:
+            if profile != "local":
+                raise ValueError("Unsupported TALEBOOK_PROFILE: %s" % profile)
+            from webserver.settings_local import settings as profile_settings
+
+            self.update(profile_settings)
+
         self.set_store_path()
 
         try:
@@ -82,6 +91,12 @@ class SettingsLoader(dict):
             self.update(manual.settings)
         except:
             pass
+
+        # Profile settings are runtime contracts rather than user preferences.
+        # Reapply them after persisted settings so local paths and process
+        # behavior cannot be overwritten by auto.py/manual.py.
+        if profile_settings is not None:
+            self.update(profile_settings)
 
     def dumpfile(self, filename="auto.py"):
         s = "\n".join("%-30s: %s," % (repr(k), repr(v)) for k, v in sorted(self.items()))

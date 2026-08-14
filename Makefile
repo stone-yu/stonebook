@@ -1,4 +1,4 @@
-.PHONY: all build test check-design
+.PHONY: all build test check-design dev-local dev-local-check dev-local-init dev-ui-local
 
 VER = $(shell git branch --show-current | tr '/' '-')
 IMAGE = talebook/talebook:$(VER)
@@ -74,3 +74,15 @@ dev: build-dev
 
 dev/ui:
 	cd app && npm run dev
+
+dev-local:
+	.venv/bin/python scripts/dev_local.py
+
+dev-local-check:
+	.venv/bin/python scripts/dev_local.py --check
+
+dev-local-init:
+	.venv/bin/python scripts/dev_local.py --init-only
+
+dev-ui-local:
+	cd app && API_URL=http://127.0.0.1:8080 npx nuxt dev --port 3000 --host 127.0.0.1

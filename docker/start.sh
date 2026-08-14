@@ -10,49 +10,64 @@ if [ "${PUID}" = "0" ]; then
   echo "WARNING: PUID=0 runs Talebook application processes as root; this is supported for compatibility but is not required for SSL upload."
 fi
 
-# 使用预设的书库和配置
-if [ ! -d "/data/books" ]; then
-  cp -rf /prebuilt/books /data/
-fi
-
-if [ ! -s "/data/books/calibre-webserver.db" ]; then
-  cp /prebuilt/books/calibre-webserver.db /data/books/
-fi
-
-if [ ! -d "/data/log" ]; then
-  cp -rf /prebuilt/log /data/
-fi
-
-# 检查目录，拷贝并创建目录
-cd /prebuilt/books/;
-for f in *; do
-  if [ -d "$f" -a ! -d "/data/books/$f" ]; then
-    cp -rvf "/prebuilt/books/$f" /data/books/
-  fi
-done
-
-# 检查文件，并拷贝过去
-find . \( -path ./library -o -name '*.pyc' \) -prune -o -type f -print | while read f; do
-    target="/data/books/$f"
-    if [ ! -e "$target" ]; then
-        cp "$f" "$target"
+# 先识别破坏性升级前的旧布局。发现旧数据时只准备诊断页所需的最小目录，
+# 不初始化新数据库或新书库；bootstrap 会以 legacy_storage_layout 明确失败。
+legacy_layout=0
+if [ -s /data/books/calibre-webserver.db ] || [ -e /data/books/settings/auto.py ] || [ -e /data/books/library/metadata.db ]; then
+  legacy_layout=1
+else
+  for legacy_dir in imports library audiobooks progress themes logo ssl upload convert extract; do
+    if [ -d "/data/books/$legacy_dir" ] && [ -n "$(find "/data/books/$legacy_dir" -mindepth 1 -print -quit 2>/dev/null)" ]; then
+      legacy_layout=1
+      break
     fi
-done
+  done
+fi
 
+mkdir -p \
+  /data/settings /data/progress /data/themes /data/logo /data/ssl /data/calibre /data/log/nginx \
+  /data/work/upload /data/work/convert /data/work/extract \
+  /imports /library /audiobooks \
+  /root/.npm /run/talebook /var/www/talebook/status
 
-mkdir -p /root/.npm /run/talebook /data/books/ssl
+if [ "$legacy_layout" = "0" ]; then
+  if [ ! -s /data/calibre-webserver.db ]; then
+    cp /prebuilt/data/calibre-webserver.db /data/
+  fi
 
-# 设置系统文件的权限（数量较少，且 nginx/诊断页在自检完成前就需要可用，必须先于 supervisord 启动前就绪）
-mkdir -p /data/log/nginx /var/www/talebook/status
-# .env 通过同目录临时文件原子替换；只调整目录节点，不递归修改 app 源码与依赖。
+  # 复制应用预置状态，但绝不覆盖管理员已有文件。
+  cd /prebuilt/data || exit 1
+  find . -type f -print | while read -r source; do
+    target="/data/$source"
+    if [ ! -e "$target" ]; then
+      mkdir -p "$(dirname "$target")"
+      cp "$source" "$target"
+    fi
+  done
+
+  if [ ! -s /library/metadata.db ]; then
+    cp -a /prebuilt/library/. /library/
+  fi
+fi
+
+# Nginx 必须在 bootstrap 失败时仍能展示诊断页，因此默认证书独立兜底。
+if [ ! -e /data/ssl/ssl.crt ]; then
+  cp /prebuilt/data/ssl/ssl.crt /data/ssl/
+fi
+if [ ! -e /data/ssl/ssl.key ]; then
+  cp /prebuilt/data/ssl/ssl.key /data/ssl/
+fi
+
+# 系统运行目录必须在 supervisord 前可用；持久化目录的递归属主修复与原子写入
+# 校验由 webserver/self_check.py 负责，以便失败时进入可见状态页。
 chown talebook:talebook /var/www/talebook/app
 chown -R talebook:talebook \
   /run/talebook \
-  /data/books/ssl \
+  /data/ssl \
   /data/log/ \
+  /data/calibre \
   /var/lib/nginx \
   /var/log/nginx \
-  /root/.config/calibre \
   /root/.npm \
   /var/www/talebook/app/.env \
   /var/www/talebook/app/dist \
@@ -62,17 +77,13 @@ chown -R talebook:talebook \
   /usr/lib/calibre \
   /usr/share/calibre
 
-if [ -f /data/books/ssl/ssl.crt ]; then
-  chmod 0644 /data/books/ssl/ssl.crt
+if [ -f /data/ssl/ssl.crt ]; then
+  chmod 0644 /data/ssl/ssl.crt
 fi
-if [ -f /data/books/ssl/ssl.key ]; then
-  chmod 0600 /data/books/ssl/ssl.key
+if [ -f /data/ssl/ssl.key ]; then
+  chmod 0600 /data/ssl/ssl.key
 fi
 
-# /data/books 的权限校验、nginx 配置检查、数据库初始化/迁移/配置写入这些"可能失败"的
-# 步骤，交给 supervisor 的 bootstrap program（webserver/self_check.py）在 nginx 启动
-# 之后逐项自检并写入 status.json；任一步失败都不会导致容器整体重启，nginx 与诊断页
-# 始终可访问，用户不需要进入容器查看日志即可知道卡在哪一步、该怎么处理。
 export PYTHONDONTWRITEBYTECODE=1
 
 echo

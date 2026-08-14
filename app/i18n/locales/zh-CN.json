@@ -227,6 +227,7 @@
     "themes": "主题管理",
     "systemLogs": "系统日志",
     "myShelf": "我的书架",
+    "libraryCategories": "书库分类",
     "audiobooks": "有声书",
     "readBooks": "已读书目"
   },
@@ -351,6 +352,32 @@
   "shelf": {
     "pageTitle": "我的书架",
     "empty": "书架上还没有书，快去加入吧！"
+  },
+  "category": {
+    "libraryTitle": "书库分类",
+    "shelfTitle": "我的分类",
+    "allBooks": "全部书籍",
+    "uncategorized": "未分类",
+    "empty": "该分类中暂无书籍",
+    "includeDescendants": "包含子分类",
+    "addRoot": "新增一级分类",
+    "addChild": "新增子分类",
+    "rename": "重命名",
+    "move": "移动",
+    "merge": "合并",
+    "name": "分类名称",
+    "root": "一级分类",
+    "targetParent": "目标父分类",
+    "mergeTarget": "合并到",
+    "createTitle": "新建分类",
+    "renameTitle": "重命名分类",
+    "moveTitle": "移动分类",
+    "mergeTitle": "合并分类",
+    "organize": "整理分类",
+    "organizeBook": "整理《{title}》",
+    "personalCategories": "个人分类",
+    "moveBook": "调整分类",
+    "moveBookTitle": "调整《{title}》的分类"
   },
   "user": {
     "history": {
@@ -646,6 +673,8 @@
       },
       "label": {
         "deleteAfterImport": "导入后删除源文件",
+        "autoCategorize": "按文件夹自动分类",
+        "categoryPreview": "拟归类到",
         "status": "状态",
         "path": "路径",
         "scanInfo": "扫描信息",

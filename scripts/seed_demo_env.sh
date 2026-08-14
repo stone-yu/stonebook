@@ -23,14 +23,14 @@ docker compose -f dev.yml up -d
 
 echo ">> 等待 /data 初始化..."
 for _ in $(seq 1 40); do
-    if docker exec "$CONTAINER" sh -c 'test -d /data/books' 2>/dev/null; then break; fi
+    if docker exec "$CONTAINER" sh -c 'test -d /data/settings' 2>/dev/null; then break; fi
     sleep 2
 done
 
 echo ">> 灌入固化的 demo 数据..."
-docker exec "$CONTAINER" sh -c 'mkdir -p /data/books/settings'
-docker cp docker/seed/calibre-webserver.db "$CONTAINER:/data/books/calibre-webserver.db"
-docker cp docker/seed/auto.py "$CONTAINER:/data/books/settings/auto.py"
+docker exec "$CONTAINER" sh -c 'mkdir -p /data/settings'
+docker cp docker/seed/calibre-webserver.db "$CONTAINER:/data/calibre-webserver.db"
+docker cp docker/seed/auto.py "$CONTAINER:/data/settings/auto.py"
 
 echo ">> 重启后端使配置生效..."
 docker exec "$CONTAINER" supervisorctl restart tornado >/dev/null

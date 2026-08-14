@@ -63,17 +63,17 @@ define(
 )
 define(
     "path-resources",
-    default="/usr/share/calibre",
+    default=getattr(sys, "resources_location", "/usr/share/calibre"),
     type=str,
     help=_("Path to calibre resources."),
 )
 define(
     "path-plugins",
-    default="/usr/lib/calibre/calibre/plugins",
+    default=getattr(sys, "extensions_location", "/usr/lib/calibre/calibre/plugins"),
     type=str,
     help=_("Path to calibre plugins."),
 )
-define("path-bin", default="/usr/bin", type=str, help=_("Path to calibre binary programs."))
+define("path-bin", default=os.path.dirname(sys.executable) or "/usr/bin", type=str, help=_("Path to calibre binary programs."))
 define(
     "with-library",
     default=CONF["with_library"],
@@ -291,7 +291,7 @@ def make_app():
 
     mimetypes.add_type("application/javascript", ".js")
 
-    themes_path = CONF.get("themes_path", "/data/books/themes/")
+    themes_path = CONF.get("themes_path", "/data/themes/")
     os.makedirs(themes_path, exist_ok=True)
 
     theme_routes = [(r"/static/themes/(.*)", web.StaticFileHandler, {"path": themes_path})]

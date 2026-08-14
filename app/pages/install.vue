@@ -241,7 +241,7 @@ const dbTypeItems = computed(() => [
 ]);
 
 const buildUserDatabaseUrl = () => {
-    if (db_type.value === 'sqlite') return 'sqlite:////data/books/calibre-webserver.db';
+    if (db_type.value === 'sqlite') return 'sqlite:////data/calibre-webserver.db';
     const user = encodeURIComponent(db_user.value);
     const pass = encodeURIComponent(db_pass.value);
     return `mysql+pymysql://${user}:${pass}@${db_host.value}:${db_port.value}/${db_name.value}?charset=utf8mb4`;

@@ -15,20 +15,20 @@ settings = {
     "i18n_path"     : os.path.join(os.path.dirname(__file__), "i18n"),
     "static_path"   : os.path.join(os.path.dirname(__file__), "../app/dist"),
     "resource_path" : os.path.join(os.path.dirname(__file__), "resources"),
-    "settings_path" : "/data/books/settings/",
-    "progress_path" : "/data/books/progress/",
-    "convert_path"  : "/data/books/convert/",
-    "upload_path"   : "/data/books/upload/",
-    "scan_upload_path"   : "/data/books/imports/",
-    "extract_path"  : "/data/books/extract/",
-    "with_library"  : "/data/books/library/",
+    "settings_path" : "/data/settings/",
+    "progress_path" : "/data/progress/",
+    "convert_path"  : "/data/work/convert/",
+    "upload_path"   : "/data/work/upload/",
+    "scan_upload_path"   : "/imports/",
+    "extract_path"  : "/data/work/extract/",
+    "with_library"  : "/library/",
     "cookie_secret" : "cookie_secret",
     "cookie_expire" : 7*86400,
     "login_url"     : "/login",
-    "user_database" : 'sqlite:////data/books/calibre-webserver.db',
+    "user_database" : 'sqlite:////data/calibre-webserver.db',
     "site_title"    : u"奇异书屋",
-    "ssl_crt_file"  : "/data/books/ssl/ssl.crt",
-    "ssl_key_file"  : "/data/books/ssl/ssl.key",
+    "ssl_crt_file"  : "/data/ssl/ssl.crt",
+    "ssl_key_file"  : "/data/ssl/ssl.key",
 
     "push_title": u"%(site_title)s：推送给您一本书《%(title)s》",
     "push_content": u"为您奉上一本《%(title)s》, 欢迎常来访问%(site_title)s！%(site_url)s",
@@ -75,7 +75,7 @@ settings = {
     "PDF_VIEWER": "/static/pdfjs/web/viewer.html?file=%(pdf_url)s",
 
     "AUDIOBOOK_ENABLED": True,
-    "AUDIOBOOK_PATH": "/data/books/audiobooks",
+    "AUDIOBOOK_PATH": "/audiobooks",
     "AUDIOBOOK_OWNER_GENERATE": False,
     "AUDIOBOOK_WORKERS": 1,
     "AUDIOBOOK_MIN_FREE_GB": 5,
@@ -210,7 +210,7 @@ settings = {
     'GEETEST_CAPTCHA_KEY': '',             # 极验 Captcha Key (私钥)
 
     # 主题系统配置
-    'themes_path': '/data/books/themes/',
+    'themes_path': '/data/themes/',
     'ACTIVE_THEME': '',
     'THEME_STORE_INDEX_URL': 'https://cdn.jsdelivr.net/gh/talebook/store@main/index.json',
 

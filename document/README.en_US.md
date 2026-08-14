@@ -26,7 +26,7 @@ Here we focus on the API account application addresses for common social platfor
 
 ### Configure Single-account Demo Mode
 
-A public demo site can enable single-account read-only mode in `/data/books/settings/auto.py`. Add the following settings and restart Talebook:
+A public demo site can enable single-account read-only mode in `/data/settings/auto.py`. Add the following settings and restart Talebook:
 
 ```python
 settings = {
@@ -42,7 +42,7 @@ There is no need to pre-create the demo account: it is created automatically the
 
 ### Logo (Applicable to v3.5.9 and later versions)
 
-The favicon and QR code logo in the navigation menu are placed in the data directory ```/data/books/logo/```, which can be directly overwritten with new images.
+The favicon and QR code logo in the navigation menu are placed in the data directory ```/data/logo/```, which can be directly overwritten with new images.
 
 
 ### Logo (Applicable to v3.5.8 and older versions)
@@ -55,7 +55,12 @@ If you need to customize these two files, please directly overwrite them with ne
 
 If using docker to start, you need to mount these two directories when starting docker. For example:
 ```
-docker run -d --name talebook -p 80:80 -v /data/calibre:/data -v /data/logo:/var/www/talebook/app/dist/img/ talebook/talebook
+docker run -d --name talebook -p 80:80 \
+  -v /srv/talebook/data:/data \
+  -v /srv/talebook/imports:/imports \
+  -v /srv/talebook/library:/library \
+  -v /srv/talebook/audiobooks:/audiobooks \
+  talebook/talebook
 ```
 
 ### Upload File Size

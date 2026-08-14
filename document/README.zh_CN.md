@@ -28,7 +28,7 @@ NAS用户，可以参阅网友们写的指南：
 
 ### 配置单账号演示模式
 
-公开演示站可以在 `/data/books/settings/auto.py` 中开启单账号只读模式，加入以下配置并重启 Talebook：
+公开演示站可以在 `/data/settings/auto.py` 中开启单账号只读模式，加入以下配置并重启 Talebook：
 
 ```python
 settings = {
@@ -44,7 +44,7 @@ settings = {
 
 ### Logo (适用于v3.5.9及后续版本)
 
-favicon和导航菜单中的二维码logo，放置在数据目录 ```/data/books/logo/```中，可直接使用新图片覆盖掉。
+favicon和导航菜单中的二维码logo，放置在数据目录 ```/data/logo/```中，可直接使用新图片覆盖掉。
 
 
 ### Logo (适用于v3.5.8及更旧版本)
@@ -57,7 +57,12 @@ favicon和导航菜单中的二维码logo，已经内置在了代码目录```/va
 
 若使用docker启动，则需要在docker启动时挂载这两个目录。例如：
 ```
-docker run -d --name talebook -p 80:80 -v /data/calibre:/data -v /data/logo:/var/www/talebook/app/dist/img/ talebook/talebook
+docker run -d --name talebook -p 80:80 \
+  -v /srv/talebook/data:/data \
+  -v /srv/talebook/imports:/imports \
+  -v /srv/talebook/library:/library \
+  -v /srv/talebook/audiobooks:/audiobooks \
+  talebook/talebook
 ```
 
 ### 上传文件的大小

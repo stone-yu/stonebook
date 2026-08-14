@@ -193,10 +193,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 // 不拼接 status.json 里的任何自由文本，避免把后端日志/环境变量/路径带到页面上（v-html 渲染）。
 const STATUS_CODE_HINTS = {
   permission_denied: '检测到 /data 目录写入失败，请检查挂载卷的 PUID/PGID 与目录权限设置。',
+  legacy_storage_layout: '检测到旧版 /data/books 存储布局。新版不会自动迁移，请停服并按升级文档拆分到 /data、/imports、/library 和 /audiobooks。',
   nginx_config_invalid: 'Nginx 配置校验失败，请检查是否覆盖了自定义证书或配置文件。',
-  syncdb_failed: '数据库初始化失败，请检查 /data/books 目录是否可写、磁盘空间是否充足。',
-  migrate_failed: '数据库结构迁移失败，请检查 /data/books/calibre-webserver.db 是否可正常访问。',
-  update_config_failed: '服务器配置写入失败，请检查 /data/books/settings 目录权限。',
+  syncdb_failed: '数据库初始化失败，请检查 /data 与 /library 是否可写、磁盘空间是否充足。',
+  migrate_failed: '数据库结构迁移失败，请检查 /data/calibre-webserver.db 是否可正常访问。',
+  update_config_failed: '服务器配置写入失败，请检查 /data/settings 目录权限。',
 };
 
 const STATUS_STARTING_MSG = '服务器正在启动中，请稍候...';

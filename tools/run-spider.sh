@@ -12,7 +12,7 @@ fi
 
 for f in /data1/download/weiphone.com/*; do
     echo "## Import $f"
-    calibredb add --with-library /data/books/library/ "$f"
+    calibredb add --with-library /library/ "$f"
     mv "$f" /data1/download/feng.com/;
 done
 

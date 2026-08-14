@@ -8,8 +8,8 @@ import sys
 import logging
 import requests
 
-books_dir = "/data/books/download/kgbook.com/"
-done_path = "/data/books/download/done-kgbook.txt"
+books_dir = "/data/work/download/kgbook.com/"
+done_path = "/data/work/download/done-kgbook.txt"
 
 site = "https://kgbook.com/"
 headers = {

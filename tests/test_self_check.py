@@ -18,13 +18,24 @@ class TestSelfCheckSteps(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.tmpdir, ignore_errors=True)
 
         self.data_dir = os.path.join(self.tmpdir, "data")
+        self.imports_dir = os.path.join(self.tmpdir, "imports")
+        self.library_dir = os.path.join(self.tmpdir, "library")
+        self.audiobooks_dir = os.path.join(self.tmpdir, "audiobooks")
         self.status_dir = os.path.join(self.tmpdir, "status")
-        os.makedirs(os.path.join(self.data_dir, "books", "library"))
-        os.makedirs(os.path.join(self.data_dir, "books", "settings"))
+        os.makedirs(os.path.join(self.data_dir, "settings"))
+        os.makedirs(self.imports_dir)
+        os.makedirs(self.library_dir)
+        os.makedirs(self.audiobooks_dir)
 
         self._orig_data_dir = self_check.DATA_DIR
+        self._orig_imports_dir = self_check.IMPORTS_DIR
+        self._orig_library_dir = self_check.LIBRARY_DIR
+        self._orig_audiobooks_dir = self_check.AUDIOBOOKS_DIR
         self._orig_status_dir = self_check.STATUS_DIR
         self_check.DATA_DIR = self.data_dir
+        self_check.IMPORTS_DIR = self.imports_dir
+        self_check.LIBRARY_DIR = self.library_dir
+        self_check.AUDIOBOOKS_DIR = self.audiobooks_dir
         self_check.STATUS_DIR = self.status_dir
         self.addCleanup(self._restore_dirs)
 
@@ -34,7 +45,31 @@ class TestSelfCheckSteps(unittest.TestCase):
 
     def _restore_dirs(self):
         self_check.DATA_DIR = self._orig_data_dir
+        self_check.IMPORTS_DIR = self._orig_imports_dir
+        self_check.LIBRARY_DIR = self._orig_library_dir
+        self_check.AUDIOBOOKS_DIR = self._orig_audiobooks_dir
         self_check.STATUS_DIR = self._orig_status_dir
+
+    def test_legacy_layout_is_rejected_before_initialization(self):
+        legacy = os.path.join(self.data_dir, "books")
+        os.makedirs(legacy)
+        with open(os.path.join(legacy, "calibre-webserver.db"), "w") as f:
+            f.write("legacy")
+
+        self.assertEqual(self_check.check_storage_layout(), (False, "legacy_storage_layout"))
+
+    def test_empty_legacy_directory_does_not_block_new_layout(self):
+        os.makedirs(os.path.join(self.data_dir, "books"))
+
+        self.assertEqual(self_check.check_storage_layout(), (True, None))
+
+    def test_nonempty_legacy_library_is_rejected_without_metadata_db(self):
+        legacy_library = os.path.join(self.data_dir, "books", "library", "Author", "Book")
+        os.makedirs(legacy_library)
+        with open(os.path.join(legacy_library, "book.epub"), "w") as f:
+            f.write("book")
+
+        self.assertEqual(self_check.check_storage_layout(), (False, "legacy_storage_layout"))
 
     def test_write_status_schema(self):
         self_check.write_status([{"name": "permission", "status": "ok", "code": None}], phase="ready")
@@ -53,12 +88,12 @@ class TestSelfCheckSteps(unittest.TestCase):
         self.assertIsNone(code)
         with open(os.path.join(self.data_dir, ".permission")) as f:
             self.assertEqual(f.read().strip(), "1000:1000")
-        chown_call, library_probe, settings_probe = m_run.call_args_list
+        chown_call, data_probe, library_probe, audiobooks_probe = m_run.call_args_list
         self.assertEqual(chown_call.args[0][:2], ["chown", "-R"])
+        self.assertEqual(data_probe.args[0][-1], self.data_dir)
         self.assertEqual(library_probe.args[0][0], "gosu")
-        self.assertEqual(library_probe.args[0][-1], os.path.join(self.data_dir, "books", "library"))
-        self.assertEqual(settings_probe.args[0][0], "gosu")
-        self.assertEqual(settings_probe.args[0][-1], os.path.join(self.data_dir, "books", "settings"))
+        self.assertEqual(library_probe.args[0][-1], self.library_dir)
+        self.assertEqual(audiobooks_probe.args[0][-1], self.audiobooks_dir)
 
     @mock.patch("webserver.self_check.run")
     def test_check_permission_repairs_settings_when_identity_unchanged(self, m_run):
@@ -70,13 +105,14 @@ class TestSelfCheckSteps(unittest.TestCase):
 
         self.assertTrue(ok)
         self.assertIsNone(code)
-        self.assertEqual(m_run.call_count, 3)
-        settings_chown, library_probe, settings_probe = m_run.call_args_list
+        self.assertEqual(m_run.call_count, 4)
+        settings_chown, data_probe, library_probe, audiobooks_probe = m_run.call_args_list
         self.assertEqual(
-            settings_chown.args[0], ["chown", "-R", "talebook:talebook", os.path.join(self.data_dir, "books", "settings")]
+            settings_chown.args[0], ["chown", "-R", "talebook:talebook", os.path.join(self.data_dir, "settings")]
         )
-        self.assertEqual(library_probe.args[0][-1], os.path.join(self.data_dir, "books", "library"))
-        self.assertEqual(settings_probe.args[0][-1], os.path.join(self.data_dir, "books", "settings"))
+        self.assertEqual(data_probe.args[0][-1], self.data_dir)
+        self.assertEqual(library_probe.args[0][-1], self.library_dir)
+        self.assertEqual(audiobooks_probe.args[0][-1], self.audiobooks_dir)
 
     @mock.patch("webserver.self_check.run")
     def test_check_permission_chown_failure(self, m_run):
@@ -103,11 +139,11 @@ class TestSelfCheckSteps(unittest.TestCase):
 
         self.assertFalse(ok)
         self.assertEqual(code, "permission_denied")
-        m_run.assert_called_once_with(["chown", "-R", "talebook:talebook", os.path.join(self.data_dir, "books", "settings")])
+        m_run.assert_called_once_with(["chown", "-R", "talebook:talebook", os.path.join(self.data_dir, "settings")])
 
     @mock.patch("webserver.self_check.run")
     def test_check_permission_settings_atomic_write_failure(self, m_run):
-        m_run.side_effect = [True, True, False]
+        m_run.side_effect = [True, True, True, False]
 
         ok, code = self_check.check_permission()
 
@@ -117,7 +153,7 @@ class TestSelfCheckSteps(unittest.TestCase):
     @mock.patch("webserver.self_check.run")
     def test_check_atomic_write_uses_application_identity_and_rename(self, m_run):
         m_run.return_value = True
-        directory = os.path.join(self.data_dir, "books", "settings")
+        directory = os.path.join(self.data_dir, "settings")
 
         self.assertTrue(self_check.check_atomic_write(directory))
 
@@ -128,7 +164,7 @@ class TestSelfCheckSteps(unittest.TestCase):
         self.assertEqual(command[-1], directory)
 
     def test_atomic_write_probe_creates_renames_and_cleans_up(self):
-        directory = os.path.join(self.data_dir, "books", "settings")
+        directory = os.path.join(self.data_dir, "settings")
 
         subprocess.run(
             ["sh", "-c", self_check.ATOMIC_WRITE_PROBE, "talebook-write-check", directory],

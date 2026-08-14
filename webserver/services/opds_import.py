@@ -32,7 +32,7 @@ class OPDSImportService(AsyncService):
         self.count_done = 0
         self.count_skip = 0
         self.count_fail = 0
-        self.scan_dir = CONF.get("scan_upload_path", "/data/books/imports/")
+        self.scan_dir = CONF.get("scan_upload_path", "/imports/")
         self._lock = threading.Lock()
 
     @contextmanager

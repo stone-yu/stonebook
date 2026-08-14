@@ -17,8 +17,8 @@ class TrashManager:
     TRASH_SIZES_CACHE = {"trash": 0, "upload": 0, "ts": 0}
     CACHE_EXPIRATION_SECONDS = 30
     TRASH_SIZE_CACHE_LOCK = threading.Lock()
-    TRASH_PATH = os.path.join(CONF.get("with_library", "/data/books/library/"), ".caltrash")
-    UPLOAD_TRASH_PATH = CONF.get("upload_path", "/data/books/upload/")
+    TRASH_PATH = os.path.join(CONF.get("with_library", "/library/"), ".caltrash")
+    UPLOAD_TRASH_PATH = CONF.get("upload_path", "/data/work/upload/")
 
     @staticmethod
     def _is_safe_cleanup_path(path, expected_basename=None):

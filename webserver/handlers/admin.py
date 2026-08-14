@@ -594,9 +594,7 @@ def _get_database_url(handler, allow_sqlite=True):
         db_type = handler.get_argument("db_type", "sqlite" if allow_sqlite else "").strip()
         if allow_sqlite and db_type == "sqlite":
             return (
-                CONF["user_database"]
-                if CONF["user_database"].startswith("sqlite")
-                else "sqlite:////data/books/calibre-webserver.db"
+                CONF["user_database"] if CONF["user_database"].startswith("sqlite") else "sqlite:////data/calibre-webserver.db"
             )
         if db_type in ("mysql", "mariadb"):
             db_host = handler.get_argument("db_host", "localhost").strip()

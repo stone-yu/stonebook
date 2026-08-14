@@ -259,17 +259,6 @@ talebook/
 │   │   └── update-candle-reader.yml
 │   └── ISSUE_TEMPLATE/          # Issue 模板
 │
-├── .planning/                    # 项目规划
-│   ├── codebase/                # 代码库分析
-│   │   ├── ARCHITECTURE.md
-│   │   ├── STACK.md
-│   │   └── STRUCTURE.md
-│   └── todos/                   # 待办事项
-│
-├── .trae/                        # Trae IDE 配置
-│   ├── documents/               # 开发文档
-│   └── rules/                   # 代码规则
-│
 ├── server.py                     # 程序入口
 ├── pyproject.toml               # Python 项目配置
 ├── requirements.txt              # Python 依赖
@@ -1365,8 +1354,8 @@ settings = {
     # 路径配置
     'nuxt_env_path': '../app/.env',
     'html_path': '../app/dist',
-    'with_library': '/data/books/library/',
-    'user_database': 'sqlite:////data/books/calibre-webserver.db',
+    'with_library': '/library/',
+    'user_database': 'sqlite:////data/calibre-webserver.db',
     
     # 安全配置
     'cookie_secret': 'cookie_secret',
@@ -1505,6 +1494,9 @@ services:
     image: talebook/talebook
     volumes:
       - "${TALEBOOK_DATA_DIR:-./data}:/data"
+      - "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
+      - "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
+      - "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"
     ports:
       - "8080:80"
       - "8443:443"
@@ -1522,7 +1514,7 @@ services:
 
 #### 启动命令
 
-默认数据目录为 Compose 文件旁的 `./data`，其中包含配置、用户数据库和书库。生产环境不要使用可能被系统清理的 `/tmp`；需要复用已有目录时，在 `.env` 中设置 `TALEBOOK_DATA_DIR`。
+默认使用 Compose 文件旁的 `./data`、`./imports`、`./library` 和 `./audiobooks`。可分别通过 `TALEBOOK_DATA_DIR`、`TALEBOOK_IMPORTS_DIR`、`TALEBOOK_LIBRARY_DIR` 和 `TALEBOOK_AUDIOBOOKS_DIR` 指向其他绝对路径。旧版 `/data/books` 布局必须停服后人工迁移，新版不会自动移动或回退。
 
 ```bash
 # 下载 docker-compose.yml
@@ -1552,7 +1544,9 @@ docker run -d \
 ```bash
 mkdir -p /data/log/nginx/
 mkdir -p /var/www/talebook/
-mkdir -p /data/books/{library,extract,upload,convert,progress,settings}
+mkdir -p /data/{settings,progress,themes,logo,ssl,calibre,work/upload,work/convert,work/extract}
+mkdir -p /imports /library /audiobooks
+export CALIBRE_CONFIG_DIRECTORY=/data/calibre
 ```
 
 #### 2. 拉取代码
@@ -1597,13 +1591,13 @@ npm run generate
 
 ```bash
 # 添加预置书籍
-calibredb add --library-path=/data/books/library/ -r docker/book/
+calibredb add --library-path=/library/ -r docker/book/
 
 # 创建数据库表
 python server.py --syncdb
 
 # 创建配置文件
-touch /data/books/settings/auto.py
+touch /data/settings/auto.py
 ```
 
 #### 8. 配置服务

@@ -7,8 +7,11 @@ services:
     restart: always
     image: talebook/talebook
     volumes:
-      # 持久化配置、用户数据库和书库；可在 .env 中用 TALEBOOK_DATA_DIR 指定已有目录
+      # 应用状态、扫描来源、Calibre 书库和有声书资产使用独立持久化目录。
       - "${TALEBOOK_DATA_DIR:-./data}:/data"
+      - "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
+      - "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
+      - "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"
     ports:
       - "8080:80"
       - "8443:443"

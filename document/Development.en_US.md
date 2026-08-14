@@ -25,6 +25,56 @@ The recommended local development approach:
 
 This combination: frontend hot reload, backend auto-restart, no manual Nginx configuration needed.
 
+### Fully local macOS development without Docker
+
+Install Calibre.app and initialize the repository virtual environment:
+
+```bash
+brew install --cask calibre
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt -r requirements-test.txt
+```
+
+Copy the local configuration template and set the data root:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```dotenv
+TALEBOOK_LOCAL_ROOT=/Users/your-name/talebook-local
+```
+
+The launcher creates `data/`, `imports/`, `library/`, and `audiobooks/` below this directory. You no longer need to prefix startup commands with the variable.
+
+Check the environment and prepare `data/`, `imports/`, `library/`, and `audiobooks/` below the repository root:
+
+```bash
+make dev-local-check
+```
+
+Start the real backend in terminal 1. The first run idempotently initializes the Calibre library and Talebook database:
+
+```bash
+make dev-local
+```
+
+Verify the backend:
+
+```bash
+curl --fail http://127.0.0.1:8080/api/welcome
+```
+
+Start Nuxt in terminal 2:
+
+```bash
+make dev-ui-local
+```
+
+Open `http://127.0.0.1:3000/`. This entry point enables `TALEBOOK_PROFILE=local`, leaves production defaults unchanged, and stores Calibre configuration in `$TALEBOOK_LOCAL_ROOT/data/calibre/` instead of `~/.config/calibre`. Set `TALEBOOK_CALIBRE_BIN_DIR=/path/to/calibre/bin` in `.env` when Calibre is installed outside its standard location.
+
 ### Startup Steps
 
 **Step 1: Start the backend container**
@@ -85,7 +135,9 @@ As the version updates, some commands may not be updated in time; when encounter
 ```bash
 mkdir -p /data/log/nginx/
 mkdir -p /var/www/talebook/
-mkdir -p /data/books/{library,extract,upload,convert,progress,settings}
+mkdir -p /data/{settings,progress,themes,logo,ssl,calibre,work/upload,work/convert,work/extract}
+mkdir -p /imports /library /audiobooks
+export CALIBRE_CONFIG_DIRECTORY=/data/calibre
 ```
 
 ### Pull Code
@@ -140,12 +192,12 @@ npm run generate   # Output static files to dist/
 
 ```bash
 # Create library with preset books
-calibredb add --library-path=/data/books/library/ -r /var/www/talebook/docker/book/
+calibredb add --library-path=/library/ -r /var/www/talebook/docker/book/
 
 # Create program DB
 python /var/www/talebook/server.py --syncdb
 
-touch /data/books/settings/auto.py
+touch /data/settings/auto.py
 ```
 
 ### Configure and Start Services

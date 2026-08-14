@@ -44,8 +44,9 @@ class MyHandler(BaseHandler):
 `loader.py` 提供单例 `CONF = loader.get_settings()`，所有模块在文件顶部导入它。配置按以下顺序叠加（后者覆盖前者）：
 
 1. `settings.py` — 默认值，提交到仓库
-2. `/data/books/settings/auto.py` — 管理员在 UI 中保存的配置，运行时写入
-3. `manual.py`（可选）— 本地开发覆盖，不提交
+2. `settings_local.py` — 仅在 `TALEBOOK_PROFILE=local` 时启用，将可变目录映射到仓库根目录
+3. 当前 profile 的 `settings/auto.py` — 管理员在 UI 中保存的配置，运行时写入
+4. `manual.py`（可选）— 本地开发覆盖，不提交
 
 ### 数据模型
 

@@ -12,12 +12,20 @@ from webserver.i18n import _
 from webserver.models import Item, ScanFile
 from webserver.services import AsyncService
 from webserver.services.autofill import AutoFillService
+from webserver.services.categories import CategoryError, assign_library_path, category_path_from_file
 
 
 SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
 
 
 class ScanService(AsyncService):
+    @staticmethod
+    def category_preview(scan_root, file_path):
+        try:
+            return {"category_path": category_path_from_file(scan_root, file_path), "category_error": ""}
+        except CategoryError as error:
+            return {"category_path": [], "category_error": str(error)}
+
     def save_or_rollback(self, row):
         try:
             # 直接使用session.add和flush，避免多次commit导致的事务冲突
@@ -92,6 +100,8 @@ class ScanService(AsyncService):
                 row = samefiles.first()
                 # 更新扫描ID为当前扫描ID
                 row.scan_id = scan_id
+                row.data = dict(row.data or {})
+                row.data.update(self.category_preview(path_dir, fpath))
                 # 更新时间
                 row.update_time = datetime.datetime.now()
                 # 只处理NEW状态的记录，其他状态跳过
@@ -100,6 +110,7 @@ class ScanService(AsyncService):
                 else:
                     # 检查现有记录的哈希是否为真实哈希（非临时哈希），如果是则跳过
                     if not row.hash.startswith("fstat:"):
+                        self.save_or_rollback(row)
                         continue
                     # 如果是临时哈希，尝试重新处理
                     rows.append(row)
@@ -112,6 +123,7 @@ class ScanService(AsyncService):
 
             # 创建文件对象
             row = ScanFile(fpath, temp_hash, scan_id)
+            row.data = self.category_preview(path_dir, fpath)
             if not self.save_or_rollback(row):
                 continue
             rows.append(row)
@@ -230,7 +242,7 @@ class ScanService(AsyncService):
                 continue
 
     @AsyncService.register_service
-    def do_import(self, hashlist, user_id, delete_after=False):
+    def do_import(self, hashlist, user_id, delete_after=False, auto_categorize=True):
         from calibre.ebooks.metadata.meta import get_metadata
 
         # 生成任务ID
@@ -371,6 +383,21 @@ class ScanService(AsyncService):
                 except Exception as err:
                     self.session.rollback()
                     logging.error("save link error: %s", err)
+
+            if row.status == ScanFile.IMPORTED and auto_categorize:
+                category_path = list((row.data or {}).get("category_path") or [])
+                if category_path:
+                    try:
+                        assign_library_path(self.session, row.book_id, category_path)
+                        row.data = dict(row.data or {})
+                        row.data["category_error"] = ""
+                        self.save_or_rollback(row)
+                    except Exception as error:
+                        self.session.rollback()
+                        row.data = dict(row.data or {})
+                        row.data["category_error"] = str(error)
+                        self.save_or_rollback(row)
+                        logging.exception("自动分类失败: book_id=%s path=%s", row.book_id, category_path)
 
         # 全部导入完毕后，开始拉取书籍信息
         AutoFillService().auto_fill_all(imported)

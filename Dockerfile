@@ -117,6 +117,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # 只挂载 wheel 构建产物，编译器和 Python headers 不进入本阶段及其后代镜像。
 FROM application-base AS server
 
+ENV CALIBRE_CONFIG_DIRECTORY=/data/calibre
+
 COPY requirements.txt /tmp/
 RUN --mount=from=python-wheel-build,source=/opt/wheels,target=/tmp/talebook-wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
@@ -160,51 +162,56 @@ RUN echo "Target architecture: $TARGETARCH$TARGETVARIANT" > /arch-info.txt
 
 # prepare dirs
 RUN mkdir -p /data/log/nginx/ && \
-    mkdir -p /data/books/library  && \
-    mkdir -p /data/books/extract  && \
-    mkdir -p /data/books/upload  && \
-    mkdir -p /data/books/imports  && \
-    mkdir -p /data/books/convert  && \
-    mkdir -p /data/books/progress  && \
-    mkdir -p /data/books/settings && \
-    mkdir -p /data/books/logo && \
-    mkdir -p /data/books/ssl && \
+    mkdir -p /library  && \
+    mkdir -p /audiobooks  && \
+    mkdir -p /data/work/extract  && \
+    mkdir -p /data/work/upload  && \
+    mkdir -p /imports  && \
+    mkdir -p /data/work/convert  && \
+    mkdir -p /data/progress  && \
+    mkdir -p /data/settings && \
+    mkdir -p /data/themes && \
+    mkdir -p /data/calibre && \
+    mkdir -p /data/logo && \
+    mkdir -p /data/ssl && \
     mkdir -p /var/www/talebook/ && \
     mkdir -p /var/www/talebook/status && \
-    chmod a+w -R /data/log /data/books /var/www
+    chmod a+w -R /data /imports /library /audiobooks /var/www
 
 COPY server.py /var/www/talebook/
 COPY docker/ /var/www/talebook/docker/
 COPY webserver/ /var/www/talebook/webserver/
-COPY conf/nginx/ssl.* /data/books/ssl/
+COPY conf/nginx/ssl.* /data/ssl/
 COPY conf/nginx/talebook.conf /etc/nginx/conf.d/
 COPY conf/supervisor/talebook.conf /etc/supervisor/conf.d/
 COPY docker/status_page.html /var/www/talebook/status/status_page.html
 COPY --from=builder /app-static/ /var/www/talebook/app/
-COPY --from=builder /app-static/dist/logo/ /data/books/logo/
+COPY --from=builder /app-static/dist/logo/ /data/logo/
 
 RUN rm -f /etc/nginx/sites-enabled/default /var/www/html -rf && \
     cd /var/www/talebook/ && \
     echo "VERSION = \"$GIT_VERSION\"" > webserver/version.py && \
     echo "ARCH = \"$TARGETARCH$TARGETVARIANT\"" >> webserver/version.py && \
-    echo 'settings = {}' > /data/books/settings/auto.py && \
-    chmod a+w /data/books/settings/auto.py && \
-    calibredb add --library-path=/data/books/library/ -r docker/book/ && \
+    echo 'settings = {}' > /data/settings/auto.py && \
+    chmod a+w /data/settings/auto.py && \
+    calibredb add --library-path=/library/ -r docker/book/ && \
     python3 server.py --syncdb  && \
     python3 server.py --update-config  && \
     rm -f webserver/*.pyc && \
     rm -rf app/src && \
     rm -rf app/dist/logo && \
-    ln -s /data/books/logo app/dist/logo && \
-    mkdir -p /prebuilt/ && \
-    mv /data/* /prebuilt/ && \
+    ln -s /data/logo app/dist/logo && \
+    mkdir -p /prebuilt/data /prebuilt/library && \
+    cp -a /data/. /prebuilt/data/ && \
+    cp -a /library/. /prebuilt/library/ && \
+    rm -rf /data/* /library/* && \
     chmod +x /var/www/talebook/docker/start.sh && \
     chmod +x /var/www/talebook/server.py && \
     chmod +x /var/www/talebook/webserver/migrate_db.py
 
 EXPOSE 80 443
 
-VOLUME ["/data"]
+VOLUME ["/data", "/imports", "/library", "/audiobooks"]
 
 CMD ["/var/www/talebook/docker/start.sh"]
 
@@ -238,9 +245,9 @@ COPY conf/nginx/server-side-render.conf /etc/nginx/conf.d/talebook.conf
 COPY conf/supervisor/server-side-render.conf /etc/supervisor/conf.d/talebook.conf
 COPY --from=builder /app-ssr/ /var/www/talebook/app/
 
-# fix: symlink logo dir so user can override /data/books/logo/link.png
+# fix: symlink logo dir so user can override /data/logo/link.png
 RUN rm -rf /var/www/talebook/app/.output/public/logo && \
-    ln -s /data/books/logo /var/www/talebook/app/.output/public/logo
+    ln -s /data/logo /var/www/talebook/app/.output/public/logo
 
 
 # ----------------------------------------
@@ -292,22 +299,25 @@ WORKDIR /var/www/talebook
 
 # prepare dirs
 RUN mkdir -p /data/log/nginx/ && \
-    mkdir -p /data/books/library  && \
-    mkdir -p /data/books/extract  && \
-    mkdir -p /data/books/upload  && \
-    mkdir -p /data/books/imports  && \
-    mkdir -p /data/books/convert  && \
-    mkdir -p /data/books/progress  && \
-    mkdir -p /data/books/settings && \
-    mkdir -p /data/books/logo && \
-    mkdir -p /data/books/ssl && \
+    mkdir -p /library  && \
+    mkdir -p /audiobooks  && \
+    mkdir -p /data/work/extract  && \
+    mkdir -p /data/work/upload  && \
+    mkdir -p /imports  && \
+    mkdir -p /data/work/convert  && \
+    mkdir -p /data/progress  && \
+    mkdir -p /data/settings && \
+    mkdir -p /data/themes && \
+    mkdir -p /data/calibre && \
+    mkdir -p /data/logo && \
+    mkdir -p /data/ssl && \
     mkdir -p /var/www/talebook/ && \
-    chmod a+w -R /data/log /data/books /var/www
+    chmod a+w -R /data /imports /library /audiobooks /var/www
 
 COPY server.py /var/www/talebook/
 COPY docker/ /var/www/talebook/docker/
 COPY webserver/ /var/www/talebook/webserver/
-COPY conf/nginx/ssl.* /data/books/ssl/
+COPY conf/nginx/ssl.* /data/ssl/
 COPY conf/nginx/dev.conf /etc/nginx/conf.d/talebook.conf
 COPY conf/supervisor/dev.conf /etc/supervisor/conf.d/talebook.conf
 
@@ -322,21 +332,23 @@ RUN rm -f /etc/nginx/sites-enabled/default /var/www/html -rf && \
     cd /var/www/talebook/ && \
     echo "VERSION = \"$GIT_VERSION\"" > webserver/version.py && \
     echo "ARCH = \"$TARGETARCH$TARGETVARIANT\"" >> webserver/version.py && \
-    echo 'settings = {}' > /data/books/settings/auto.py && \
-    chmod a+w /data/books/settings/auto.py && \
-    calibredb add --library-path=/data/books/library/ -r docker/book/ && \
+    echo 'settings = {}' > /data/settings/auto.py && \
+    chmod a+w /data/settings/auto.py && \
+    calibredb add --library-path=/library/ -r docker/book/ && \
     python3 server.py --syncdb  && \
     python3 server.py --update-config  && \
     rm -f webserver/*.pyc && \
-    mkdir -p /prebuilt/ && \
-    mv /data/* /prebuilt/ && \
+    mkdir -p /prebuilt/data /prebuilt/library && \
+    cp -a /data/. /prebuilt/data/ && \
+    cp -a /library/. /prebuilt/library/ && \
+    rm -rf /data/* /library/* && \
     chmod +x /var/www/talebook/docker/start-dev.sh && \
     chmod +x /var/www/talebook/server.py && \
     chmod +x /var/www/talebook/webserver/migrate_db.py
 
 EXPOSE 80 443
 
-VOLUME ["/data"]
+VOLUME ["/data", "/imports", "/library", "/audiobooks"]
 
 CMD ["/var/www/talebook/docker/start-dev.sh"]
 

@@ -6,10 +6,12 @@
                 md="3"
             >
                 <CategoryTreePanel
-                    :title="t('category.shelfTitle')"
+                    :title="t('category.libraryTitle')"
                     :tree="tree"
                     :selected-id="selectedId"
-                    manageable
+                    :manageable="Boolean(store.user.is_admin)"
+                    show-uncategorized
+                    :uncategorized-count="uncategorizedCount"
                     @select="selectCategory"
                     @operate="operate"
                 />
@@ -20,10 +22,10 @@
             >
                 <div class="d-flex align-center mb-3">
                     <h1 class="text-h5">
-                        {{ t('shelf.pageTitle') }}
+                        {{ selectedTitle }}
                     </h1><v-spacer />
                     <v-switch
-                        v-if="selectedId"
+                        v-if="selectedId && selectedId > 0"
                         v-model="recursive"
                         :label="t('category.includeDescendants')"
                         hide-details
@@ -34,7 +36,7 @@
                     v-if="books.length === 0"
                     class="text-center py-8 text-grey"
                 >
-                    {{ t('shelf.empty') }}
+                    {{ t('category.empty') }}
                 </div>
                 <v-row v-else>
                     <v-col
@@ -54,14 +56,14 @@
                             <v-card-subtitle class="text-truncate px-2">
                                 {{ book.title }}
                             </v-card-subtitle>
-                            <v-card-actions>
+                            <v-card-actions v-if="store.user.is_admin">
                                 <v-btn
                                     size="small"
                                     block
-                                    prepend-icon="mdi-folder-edit"
+                                    prepend-icon="mdi-folder-move"
                                     @click="editBook(book)"
                                 >
-                                    {{ t('category.organize') }}
+                                    {{ t('category.moveBook') }}
                                 </v-btn>
                             </v-card-actions>
                         </v-card>
@@ -76,30 +78,26 @@
                 </v-alert>
             </v-col>
         </v-row>
-
         <v-dialog
             v-model="bookDialog"
-            max-width="520"
+            max-width="500"
         >
             <v-card>
-                <v-card-title>{{ t('category.organizeBook', { title: activeBook?.title || '' }) }}</v-card-title>
-                <v-card-text>
+                <v-card-title>{{ t('category.moveBookTitle', { title: activeBook?.title || '' }) }}</v-card-title><v-card-text>
                     <v-select
-                        v-model="activeCategoryIds"
+                        v-model="bookCategoryId"
                         :items="categoryOptions"
                         item-title="title"
                         item-value="value"
-                        multiple
-                        chips
-                        :label="t('category.personalCategories')"
+                        :label="t('category.libraryTitle')"
+                        clearable
                     />
-                </v-card-text>
-                <v-card-actions>
+                </v-card-text><v-card-actions>
                     <v-spacer /><v-btn @click="bookDialog = false">
                         {{ t('common.cancel') }}
                     </v-btn><v-btn
                         color="primary"
-                        @click="saveBookCategories"
+                        @click="saveBookCategory"
                     >
                         {{ t('common.save') }}
                     </v-btn>
@@ -116,59 +114,64 @@ import { useMainStore } from '@/stores/main';
 import { useI18n } from 'vue-i18n';
 
 const { $backend } = useNuxtApp();
-const mainStore = useMainStore();
+const store = useMainStore();
 const { t } = useI18n();
 const tree = ref([]);
 const books = ref([]);
 const selectedId = ref(null);
 const recursive = ref(true);
+const uncategorizedCount = ref(0);
 const error = ref('');
+const assignments = ref({});
 const bookDialog = ref(false);
 const activeBook = ref(null);
-const activeCategoryIds = ref([]);
+const bookCategoryId = ref(null);
 
 const flatten = nodes => nodes.flatMap(node => [node, ...flatten(node.children || [])]);
 const categoryOptions = computed(() => flatten(tree.value).map(node => ({
     title: `${'— '.repeat(Math.max(0, node.depth - 1))}${node.name}`,
     value: node.id,
 })));
+const selectedTitle = computed(() => {
+    if (selectedId.value === null) return t('category.allBooks');
+    if (selectedId.value === 0) return t('category.uncategorized');
+    return flatten(tree.value).find(node => node.id === selectedId.value)?.name || t('category.libraryTitle');
+});
 
 async function loadTree() {
-    const rsp = await $backend('/shelf/categories');
-    if (rsp.err === 'ok') tree.value = rsp.tree || [];
+    const rsp = await $backend('/categories');
+    if (rsp.err === 'ok') {
+        tree.value = rsp.tree || [];
+        uncategorizedCount.value = rsp.uncategorized_count || 0;
+        assignments.value = rsp.book_categories || {};
+    }
 }
 async function loadBooks() {
-    const url = selectedId.value
-        ? `/shelf/categories/${selectedId.value}/books?recursive=${recursive.value}`
-        : '/shelf';
+    error.value = '';
+    const url = selectedId.value === null ? '/library' : `/categories/${selectedId.value}/books?recursive=${recursive.value}`;
     const rsp = await $backend(url);
     if (rsp.err === 'ok') books.value = rsp.books || [];
     else error.value = rsp.msg;
 }
 function selectCategory(id) { selectedId.value = id; loadBooks(); }
 async function operate(payload) {
-    const rsp = await $backend('/shelf/categories', { method: 'POST', body: JSON.stringify(payload) });
+    const rsp = await $backend('/admin/categories', { method: 'POST', body: JSON.stringify(payload) });
     if (rsp.err !== 'ok') error.value = rsp.msg;
     else { error.value = ''; await loadTree(); await loadBooks(); }
 }
 function editBook(book) {
     activeBook.value = book;
-    activeCategoryIds.value = [...(book.shelf_category_ids || [])];
+    bookCategoryId.value = assignments.value[String(book.id)] || assignments.value[book.id] || null;
     bookDialog.value = true;
 }
-async function saveBookCategories() {
-    const before = new Set(activeBook.value.shelf_category_ids || []);
-    const after = new Set(activeCategoryIds.value);
-    for (const categoryId of after) {
-        if (!before.has(categoryId)) await operate({ action: 'assign', category_id: categoryId, book_id: activeBook.value.id });
-    }
-    for (const categoryId of before) {
-        if (!after.has(categoryId)) await operate({ action: 'unassign', category_id: categoryId, book_id: activeBook.value.id });
-    }
+async function saveBookCategory() {
+    const payload = bookCategoryId.value
+        ? { action: 'assign', category_id: bookCategoryId.value, book_id: activeBook.value.id }
+        : { action: 'unassign', book_id: activeBook.value.id };
+    await operate(payload);
     bookDialog.value = false;
-    await loadBooks();
 }
 
-useHead({ title: () => t('shelf.pageTitle') });
-onMounted(async () => { mainStore.setNavbar(true); await loadTree(); await loadBooks(); });
+onMounted(async () => { store.setNavbar(true); await loadTree(); await loadBooks(); });
+useHead({ title: () => t('category.libraryTitle') });
 </script>

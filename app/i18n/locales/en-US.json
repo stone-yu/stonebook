@@ -222,6 +222,7 @@
     "themes": "Themes",
     "systemLogs": "System Logs",
     "myShelf": "My Shelf",
+    "libraryCategories": "Library Categories",
     "audiobooks": "Audiobooks",
     "readBooks": "Read Books"
   },
@@ -346,6 +347,32 @@
   "shelf": {
     "pageTitle": "My Shelf",
     "empty": "Your shelf is empty. Go add some books!"
+  },
+  "category": {
+    "libraryTitle": "Library Categories",
+    "shelfTitle": "My Categories",
+    "allBooks": "All Books",
+    "uncategorized": "Uncategorized",
+    "empty": "No books in this category",
+    "includeDescendants": "Include subcategories",
+    "addRoot": "Add root category",
+    "addChild": "Add child",
+    "rename": "Rename",
+    "move": "Move",
+    "merge": "Merge",
+    "name": "Category name",
+    "root": "Root",
+    "targetParent": "Target parent",
+    "mergeTarget": "Merge into",
+    "createTitle": "Create Category",
+    "renameTitle": "Rename Category",
+    "moveTitle": "Move Category",
+    "mergeTitle": "Merge Category",
+    "organize": "Organize",
+    "organizeBook": "Organize {title}",
+    "personalCategories": "Personal categories",
+    "moveBook": "Change category",
+    "moveBookTitle": "Change category for {title}"
   },
   "user": {
     "history": {
@@ -616,6 +643,8 @@
       },
       "label": {
         "deleteAfterImport": "Delete source files after import",
+        "autoCategorize": "Categorize from folders",
+        "categoryPreview": "Proposed category",
         "status": "Status",
         "path": "Path",
         "scanInfo": "Scan Info",

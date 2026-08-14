@@ -24,6 +24,56 @@ talebook/
 
 这种组合：前端热重载、后端自动重启，无需手动配置 Nginx。
 
+### macOS 完全脱离 Docker
+
+安装 Calibre.app，并初始化仓库虚拟环境：
+
+```bash
+brew install --cask calibre
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt -r requirements-test.txt
+```
+
+复制本地配置模板并设置数据根目录：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`：
+
+```dotenv
+TALEBOOK_LOCAL_ROOT=/Users/你的用户名/talebook-local
+```
+
+该目录下会自动创建 `data/`、`imports/`、`library/` 和 `audiobooks/`，之后无需在启动命令前重复传入变量。
+
+检查环境并准备仓库根目录下的 `data/`、`imports/`、`library/`、`audiobooks/`：
+
+```bash
+make dev-local-check
+```
+
+终端 1 启动真实后端。首次运行会幂等创建 Calibre 书库和 Talebook 数据库：
+
+```bash
+make dev-local
+```
+
+确认后端可用：
+
+```bash
+curl --fail http://127.0.0.1:8080/api/welcome
+```
+
+终端 2 启动 Nuxt 前端：
+
+```bash
+make dev-ui-local
+```
+
+访问 `http://127.0.0.1:3000/`。该入口设置 `TALEBOOK_PROFILE=local`，不会修改生产默认路径，也不会使用 `~/.config/calibre`；Calibre 配置保存在 `$TALEBOOK_LOCAL_ROOT/data/calibre/`。如果 Calibre 安装在非标准位置，可在 `.env` 中设置 `TALEBOOK_CALIBRE_BIN_DIR=/path/to/calibre/bin`。
+
 ### 启动步骤
 
 **第一步：启动后端容器**
@@ -84,7 +134,9 @@ npx playwright test               # E2E 测试（需先启动 mock server）
 ```bash
 mkdir -p /data/log/nginx/
 mkdir -p /var/www/talebook/
-mkdir -p /data/books/{library,extract,upload,convert,progress,settings}
+mkdir -p /data/{settings,progress,themes,logo,ssl,calibre,work/upload,work/convert,work/extract}
+mkdir -p /imports /library /audiobooks
+export CALIBRE_CONFIG_DIRECTORY=/data/calibre
 ```
 
 ### 拉取代码
@@ -139,12 +191,12 @@ npm run generate   # 输出静态文件到 dist/
 
 ```bash
 # 使用预置书籍创建书库
-calibredb add --library-path=/data/books/library/ -r /var/www/talebook/docker/book/
+calibredb add --library-path=/library/ -r /var/www/talebook/docker/book/
 
 # 创建程序 DB
 python /var/www/talebook/server.py --syncdb
 
-touch /data/books/settings/auto.py
+touch /data/settings/auto.py
 ```
 
 ### 配置并启动服务

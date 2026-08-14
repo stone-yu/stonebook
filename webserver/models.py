@@ -384,6 +384,56 @@ class ScanFile(Base, SQLAlchemyMixin):
         self.update_time = datetime.datetime.now()
 
 
+class LibraryCategory(Base, SQLAlchemyMixin):
+    __tablename__ = "library_categories"
+    __table_args__ = (UniqueConstraint("parent_id", "name", name="uq_library_category_parent_name"),)
+
+    id = Column(Integer, primary_key=True)
+    parent_id = Column(Integer, ForeignKey("library_categories.id"), nullable=True, index=True)
+    name = Column(String(100), nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+    create_time = Column(DateTime, default=datetime.datetime.now)
+    update_time = Column(DateTime, default=datetime.datetime.now)
+
+    parent = relationship("LibraryCategory", remote_side=[id], backref="children")
+
+
+class LibraryBookCategory(Base, SQLAlchemyMixin):
+    __tablename__ = "library_book_categories"
+
+    book_id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, ForeignKey("library_categories.id"), nullable=False, index=True)
+    create_time = Column(DateTime, default=datetime.datetime.now)
+
+    category = relationship(LibraryCategory, backref="book_links")
+
+
+class ShelfCategory(Base, SQLAlchemyMixin):
+    __tablename__ = "shelf_categories"
+    __table_args__ = (UniqueConstraint("reader_id", "parent_id", "name", name="uq_shelf_category_reader_parent_name"),)
+
+    id = Column(Integer, primary_key=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("shelf_categories.id"), nullable=True, index=True)
+    name = Column(String(100), nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+    create_time = Column(DateTime, default=datetime.datetime.now)
+    update_time = Column(DateTime, default=datetime.datetime.now)
+
+    parent = relationship("ShelfCategory", remote_side=[id], backref="children")
+
+
+class ShelfCategoryBook(Base, SQLAlchemyMixin):
+    __tablename__ = "shelf_category_books"
+
+    reader_id = Column(Integer, ForeignKey("readers.id"), primary_key=True)
+    category_id = Column(Integer, ForeignKey("shelf_categories.id"), primary_key=True)
+    book_id = Column(Integer, primary_key=True)
+    create_time = Column(DateTime, default=datetime.datetime.now)
+
+    category = relationship(ShelfCategory, backref="book_links")
+
+
 class OpdsSource(Base, SQLAlchemyMixin):
     """OPDS 源配置表 - 用于保存用户配置的 OPDS 服务器信息"""
 
