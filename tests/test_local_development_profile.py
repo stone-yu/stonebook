@@ -191,7 +191,8 @@ def test_initialize_is_idempotent_when_databases_exist(tmp_path):
     with mock.patch.object(subprocess, "run") as run:
         dev_local.initialize(Path("calibre-debug"), Path("calibredb"), tmp_path / "site-packages", tmp_path)
 
-    run.assert_not_called()
+    run.assert_called_once()
+    assert run.call_args.args[0][-1] == "--syncdb"
     assert (tmp_path / "data" / "settings" / "auto.py").is_file()
 
 
@@ -206,9 +207,11 @@ def test_initialize_reads_preset_books_from_code_root_and_writes_to_configured_r
     with mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
         dev_local.initialize(Path("calibre-debug"), Path("calibredb"), tmp_path / "site", code_root, local_root)
 
-    command = run.call_args.args[0]
+    assert run.call_count == 2
+    command = run.call_args_list[0].args[0]
     assert f"--library-path={local_root / 'library'}" in command
     assert command[-1] == str(code_root / "docker" / "book")
+    assert run.call_args_list[1].args[0][-1] == "--syncdb"
 
 
 def test_local_environment_does_not_reuse_the_user_calibre_configuration(tmp_path):

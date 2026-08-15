@@ -434,6 +434,31 @@ class ShelfCategoryBook(Base, SQLAlchemyMixin):
     category = relationship(ShelfCategory, backref="book_links")
 
 
+class BookAnnotation(Base, SQLAlchemyMixin):
+    __tablename__ = "book_annotations"
+    __table_args__ = (UniqueConstraint("reader_id", "book_id", "client_id", name="uq_annotation_owner_client"),)
+
+    id = Column(Integer, primary_key=True)
+    reader_id = Column(Integer, ForeignKey("readers.id"), nullable=False, index=True)
+    book_id = Column(Integer, nullable=False, index=True)
+    client_id = Column(String(64), nullable=False)
+    kind = Column(String(16), nullable=False)
+    content = Column(Text, default="", nullable=False)
+    quote = Column(Text, default="", nullable=False)
+    prefix = Column(String(500), default="", nullable=False)
+    suffix = Column(String(500), default="", nullable=False)
+    color = Column(String(16), default="#f6c85f", nullable=False)
+    chapter = Column(String(255), default="", nullable=False)
+    format = Column(String(16), nullable=False)
+    locator = Column(MutableDict.as_mutable(JSONType), default=dict)
+    book_title = Column(String(500), default="", nullable=False)
+    book_authors = Column(String(500), default="", nullable=False)
+    book_format = Column(String(16), default="", nullable=False)
+    book_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    create_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
+    update_time = Column(DateTime, default=datetime.datetime.now, nullable=False)
+
+
 class OpdsSource(Base, SQLAlchemyMixin):
     """OPDS 源配置表 - 用于保存用户配置的 OPDS 服务器信息"""
 

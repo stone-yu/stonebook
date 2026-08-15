@@ -28,6 +28,7 @@ See https://github.com/adobe-type-tools/cmap-resources
     <title>PDF.js viewer</title>
 
     <link rel="stylesheet" href="viewer.css">
+    <link rel="stylesheet" href="../../annotations/talebook-annotations.css?v=20260815">
 
 <!-- This snippet is used in production (included from viewer.html) -->
 <link rel="resource" type="application/l10n" href="locale/locale.properties">
@@ -429,5 +430,54 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="printContainer"></div>
 
     <input type="file" id="fileInput" class="hidden">
+    <script type="module">
+      import { TalebookAnnotations } from '../../annotations/talebook-annotations.js?v=20260815';
+
+      const file = new URLSearchParams(location.search).get('file') || '';
+      const match = file.match(/\/api\/book\/(\d+)/);
+      if (match) {
+        const bookId = Number(match[1]);
+        const currentPage = () => window.PDFViewerApplication?.page || 1;
+        const selected = () => {
+          const selection = window.getSelection();
+          if (!selection || selection.isCollapsed) return null;
+          const page = selection.anchorNode?.parentElement?.closest('.page');
+          const quote = selection.toString().trim();
+          if (!page || !quote) return null;
+          const text = page.querySelector('.textLayer')?.textContent || '';
+          const offset = text.indexOf(quote);
+          return {
+            quote,
+            prefix: text.slice(Math.max(0, offset - 120), offset),
+            suffix: text.slice(offset + quote.length, offset + quote.length + 120),
+            chapter: `第 ${page.dataset.pageNumber} 页`,
+            locator: { page: Number(page.dataset.pageNumber), offset: Math.max(0, offset) },
+          };
+        };
+        const locate = async annotation => {
+          const pageNumber = Number(annotation.locator?.page || 1);
+          window.PDFViewerApplication.page = pageNumber;
+          await new Promise(resolve => setTimeout(resolve, 350));
+          const page = document.querySelector(`.page[data-page-number="${pageNumber}"]`);
+          if (!page) return 'failed';
+          page.querySelectorAll('.ta-locate-mark').forEach(node => node.classList.remove('ta-locate-mark'));
+          if (!annotation.quote) { page.scrollIntoView({ behavior: 'smooth', block: 'start' }); return 'exact'; }
+          const nodes = [...page.querySelectorAll('.textLayer span')];
+          const target = nodes.find(node => node.textContent.includes(annotation.quote)) ||
+            nodes.find(node => annotation.quote.includes(node.textContent.trim()) && node.textContent.trim().length > 6);
+          if (!target) return 'failed';
+          target.classList.add('ta-locate-mark');
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return target.textContent.includes(annotation.quote) ? 'exact' : 'approximate';
+        };
+        new TalebookAnnotations({
+          bookId,
+          format: 'pdf',
+          getSelection: selected,
+          getLocation: () => ({ chapter: `第 ${currentPage()} 页`, locator: { page: currentPage() } }),
+          locate,
+        });
+      }
+    </script>
   </body>
 </html>

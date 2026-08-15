@@ -177,9 +177,9 @@ def initialize(calibre_debug, calibredb, site_packages, project_root=PROJECT_ROO
             env=env,
         )
 
-    database = local_root / "data" / "calibre-webserver.db"
-    if not database.exists():
-        subprocess.run(backend_command(calibre_debug, project_root, ["--syncdb"]), check=True, env=env)
+    # create_all is additive and idempotent. Run it for existing databases as
+    # well, otherwise a checkout that introduces a new table cannot start.
+    subprocess.run(backend_command(calibre_debug, project_root, ["--syncdb"]), check=True, env=env)
 
     auto_settings = local_root / "data" / "settings" / "auto.py"
     auto_settings.touch(exist_ok=True)

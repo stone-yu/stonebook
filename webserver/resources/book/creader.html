@@ -12,23 +12,84 @@
   <link rel="icon" href="{{RES}}/logo/favicon.ico" />
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
   <link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap">
-  <link rel="stylesheet" crossorigin href="style.css?v=v1.1.0">
+  <link rel="stylesheet" crossorigin href="style.css?v=v1.2.0">
+  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260815">
 
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
-    import { Reader } from "./candle-reader.es.js?v=v1.1.0"
+    import { Reader } from "./candle-reader.es.js?v=v1.2.0"
+    import { TalebookAnnotations } from "../annotations/talebook-annotations.js?v=20260815"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
-      new Reader('#app', {
+      const reader = new Reader('#app', {
         debug: false,
         server: "{{CANDLE_READER_SERVER}}",
-        themes_css: "{{RES}}/static/candle-reader/css/themes.css?v=v1.1.0",
+        themes_css: "{{RES}}/static/candle-reader/css/themes.css?v=v1.2.0",
         book_url: "{{RES}}{{epub_dir}}/",
         display_url: "",
         book_id: {{book.id}},
         audiobook_edition_id: {% if audiobook_edition_id %}{{audiobook_edition_id}}{% else %}null{% endif %},
         audiobook_manifest_url: {% if audiobook_edition_id %}"{{RES}}/api/audio/{{audiobook_edition_id}}"{% else %}""{% endif %},
+      })
+      const epubInstance = () => reader.reader && reader.reader()
+      const frameSelection = () => {
+        const instance = epubInstance()
+        const location = instance && instance.selected_location
+        if (!location) return null
+        const selection = location.contents.window.getSelection()
+        const quote = selection ? selection.toString().trim() : ''
+        const bodyText = location.contents.document.body.innerText || ''
+        const offset = bodyText.indexOf(quote)
+        return {
+          quote,
+          prefix: bodyText.slice(Math.max(0, offset - 120), offset),
+          suffix: bodyText.slice(offset + quote.length, offset + quote.length + 120),
+          chapter: location.toc && (location.toc.label || location.toc.name) || '',
+          locator: {
+            cfi: String(location.range_cfi || location.cfi),
+            segment_id: location.segment_id,
+          },
+        }
+      }
+      const currentLocation = () => {
+        const instance = epubInstance()
+        const location = instance && instance.selected_location
+        const renditionLocation = instance && instance.rendition && instance.rendition.currentLocation()
+        const cfi = location ? String(location.cfi) : renditionLocation && renditionLocation.start && renditionLocation.start.cfi
+        const chapter = location && location.toc ? (location.toc.label || location.toc.name) : instance && instance.current_toc && (instance.current_toc.label || instance.current_toc.name)
+        return cfi ? { chapter: chapter || '', locator: { cfi } } : null
+      }
+      const locate = async annotation => {
+        const instance = epubInstance()
+        if (!instance || !annotation.locator || !annotation.locator.cfi) return 'failed'
+        try {
+          await instance.rendition.display(annotation.locator.cfi)
+          if (annotation.quote) instance.rendition.annotations.highlight(annotation.locator.cfi, {}, null, '', { fill: annotation.color || '#f6c85f', 'fill-opacity': '0.35' })
+          return 'exact'
+        } catch (error) {
+          const views = instance.rendition.views()._views || []
+          for (const view of views) {
+            const elements = [...view.document.querySelectorAll('p,li,h1,h2,h3,h4')]
+            const target = elements.find(element => element.textContent.includes(annotation.quote || '__missing__'))
+            if (target) { target.classList.add('ta-locate-mark'); target.scrollIntoView({ block: 'center' }); return 'approximate' }
+          }
+          return 'failed'
+        }
+      }
+      new TalebookAnnotations({
+        bookId: {{book.id}},
+        format: 'epub',
+        getSelection: frameSelection,
+        getLocation: currentLocation,
+        locate,
+        onAnnotations: items => {
+          const instance = epubInstance()
+          if (!instance || !instance.rendition) return
+          items.filter(item => item.kind === 'highlight' && item.quote && item.locator && item.locator.cfi).forEach(item => {
+            try { instance.rendition.annotations.highlight(item.locator.cfi, {}, null, '', { fill: item.color, 'fill-opacity': '0.35' }) } catch (error) { console.debug(error) }
+          })
+        },
       })
     }
 

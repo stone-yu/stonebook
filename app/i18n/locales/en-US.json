@@ -348,6 +348,20 @@
     "pageTitle": "My Shelf",
     "empty": "Your shelf is empty. Go add some books!"
   },
+  "annotation": {
+    "booksTab": "Books",
+    "annotationsTab": "Annotations",
+    "search": "Search quotes, notes, or titles",
+    "currentShelf": "Current shelf",
+    "detached": "Not on shelf",
+    "deleted": "Source deleted",
+    "empty": "No annotations here yet",
+    "allTypes": "All types",
+    "highlight": "Highlight",
+    "note": "Note",
+    "location": "Current location",
+    "sourceDeleted": "Source book deleted"
+  },
   "category": {
     "libraryTitle": "Library Categories",
     "shelfTitle": "My Categories",

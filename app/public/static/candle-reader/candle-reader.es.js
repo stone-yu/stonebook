@@ -19214,16 +19214,23 @@ const J1 = K({
       console.log("selected segment_id = ", l), this.selected_location = {
         toc: s,
         cfi: i,
+        range_cfi: e,
         contents: t,
         segment_id: l
       };
       const r = this.rendition.views()._views.filter((a) => a.index == t.sectionIndex)[0];
-      this.show_toolbar(o.getBoundingClientRect(), r.iframe.getBoundingClientRect());
+      this.hide_toolbar();
+      const a = o.getBoundingClientRect(), c = r.iframe.getBoundingClientRect();
+      window.dispatchEvent(new CustomEvent("talebook-reader-selection", { detail: {
+        left: a.left + c.left,
+        top: a.top + c.top,
+        width: a.width,
+        height: a.height
+      } }));
     },
     on_click_toolbar_comments: function() {
       console.log("点击发表评论按钮", this.selected_location);
-      const e = this.selected_location;
-      this.hide_toolbar(), this.show_selected_comments(e.toc, e.segment_id, e.cfi);
+      this.hide_toolbar(), window.dispatchEvent(new CustomEvent("talebook-reader-annotate"));
     },
     on_keyup: function(e) {
       const t = e.keyCode || e.which;
@@ -19919,7 +19926,7 @@ function hw(e, t, n, o, i, s) {
           default: b(() => [
             f(fe, { onClick: s.on_click_toolbar_comments }, {
               default: b(() => t[34] || (t[34] = [
-                Q("发段评")
+                Q("批注想法")
               ])),
               _: 1
             }, 8, ["onClick"]),
@@ -20157,6 +20164,7 @@ const gw = /* @__PURE__ */ $n(lw, [["render", hw], ["__scopeId", "data-v-6e95e03
 function yw(e, t, n, o, i, s) {
   const l = gw;
   return ae(), ke(l, {
+    ref: "epubReader",
     book_url: n.book_url,
     display_url: n.display_url,
     debug: n.debug,
@@ -20173,7 +20181,10 @@ class _w {
     const i = op(bw, n);
     hb(i, {
       server: n.server || o
-    }), i.mount(t);
+    });
+    const s = i.mount(t);
+    this.app = s;
+    this.reader = () => s.$refs.epubReader;
   }
 }
 export {

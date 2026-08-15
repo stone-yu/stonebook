@@ -1007,6 +1007,9 @@ class BookDelete(BaseHandler):
         if not can_manage or not (self.is_admin() or self.is_book_owner(bid, self.user_id())):
             return {"err": "permission", "msg": _("无权操作")}
 
+        from webserver.services.annotations import mark_book_deleted
+
+        mark_book_deleted(self.session, bid, book)
         self.db.delete_book(bid)
         # 同步清理该书籍对应的 ScanFile 记录，避免重新导入时因哈希重复被误判为 drop
         from webserver.models import ScanFile

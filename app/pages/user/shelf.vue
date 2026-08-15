@@ -10,6 +10,7 @@
                     :tree="tree"
                     :selected-id="selectedId"
                     manageable
+                    :show-uncategorized="viewMode === 'annotations'"
                     @select="selectCategory"
                     @operate="operate"
                 />
@@ -27,46 +28,150 @@
                         v-model="recursive"
                         :label="t('category.includeDescendants')"
                         hide-details
-                        @update:model-value="loadBooks"
+                        @update:model-value="loadCurrent"
                     />
                 </div>
-                <div
-                    v-if="books.length === 0"
-                    class="text-center py-8 text-grey"
+                <v-tabs
+                    v-model="viewMode"
+                    color="primary"
+                    class="mb-4"
+                    @update:model-value="loadCurrent"
                 >
-                    {{ t('shelf.empty') }}
-                </div>
-                <v-row v-else>
-                    <v-col
-                        v-for="book in books"
-                        :key="book.id"
-                        cols="4"
-                        sm="3"
-                        md="2"
+                    <v-tab
+                        value="books"
+                        prepend-icon="mdi-bookshelf"
                     >
-                        <v-card>
-                            <NuxtLink :to="`/book/${book.id}`">
-                                <v-img
-                                    :src="book.img"
-                                    :aspect-ratio="11 / 15"
-                                />
-                            </NuxtLink>
-                            <v-card-subtitle class="text-truncate px-2">
-                                {{ book.title }}
-                            </v-card-subtitle>
-                            <v-card-actions>
-                                <v-btn
-                                    size="small"
-                                    block
-                                    prepend-icon="mdi-folder-edit"
-                                    @click="editBook(book)"
-                                >
-                                    {{ t('category.organize') }}
-                                </v-btn>
-                            </v-card-actions>
-                        </v-card>
-                    </v-col>
-                </v-row>
+                        {{ t('annotation.booksTab') }}
+                    </v-tab>
+                    <v-tab
+                        value="annotations"
+                        prepend-icon="mdi-format-quote-open"
+                    >
+                        {{ t('annotation.annotationsTab') }}
+                    </v-tab>
+                </v-tabs>
+                <template v-if="viewMode === 'books'">
+                    <div
+                        v-if="books.length === 0"
+                        class="text-center py-8 text-grey"
+                    >
+                        {{ t('shelf.empty') }}
+                    </div>
+                    <v-row v-else>
+                        <v-col
+                            v-for="book in books"
+                            :key="book.id"
+                            cols="4"
+                            sm="3"
+                            md="2"
+                        >
+                            <v-card>
+                                <NuxtLink :to="`/book/${book.id}`">
+                                    <v-img
+                                        :src="book.img"
+                                        :aspect-ratio="11 / 15"
+                                    />
+                                </NuxtLink>
+                                <v-card-subtitle class="text-truncate px-2">
+                                    {{ book.title }}
+                                </v-card-subtitle>
+                                <v-card-actions>
+                                    <v-btn
+                                        size="small"
+                                        block
+                                        prepend-icon="mdi-folder-edit"
+                                        @click="editBook(book)"
+                                    >
+                                        {{ t('category.organize') }}
+                                    </v-btn>
+                                </v-card-actions>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </template>
+                <template v-else>
+                    <div class="d-flex flex-wrap ga-2 mb-4">
+                        <v-text-field
+                            v-model="annotationQuery"
+                            :label="t('annotation.search')"
+                            prepend-inner-icon="mdi-magnify"
+                            density="compact"
+                            hide-details
+                            clearable
+                            style="max-width: 320px"
+                            @keyup.enter="loadAnnotations"
+                        />
+                        <v-select
+                            v-model="annotationKind"
+                            :items="annotationKinds"
+                            item-title="title"
+                            item-value="value"
+                            density="compact"
+                            hide-details
+                            style="max-width: 180px"
+                            @update:model-value="loadAnnotations"
+                        />
+                        <v-btn-toggle
+                            v-model="specialView"
+                            mandatory
+                            density="compact"
+                            @update:model-value="loadAnnotations"
+                        >
+                            <v-btn value="normal">
+                                {{ t('annotation.currentShelf') }}
+                            </v-btn>
+                            <v-btn value="detached">
+                                {{ t('annotation.detached') }}
+                            </v-btn>
+                            <v-btn value="deleted">
+                                {{ t('annotation.deleted') }}
+                            </v-btn>
+                        </v-btn-toggle>
+                    </div>
+                    <div
+                        v-if="annotations.length === 0"
+                        class="text-center py-10 text-grey"
+                    >
+                        {{ t('annotation.empty') }}
+                    </div>
+                    <v-card
+                        v-for="item in annotations"
+                        v-else
+                        :key="item.id"
+                        class="annotation-card mb-3"
+                        variant="outlined"
+                        :style="{ borderInlineStart: `4px solid ${item.color}` }"
+                        @click="openAnnotation(item)"
+                    >
+                        <v-card-title class="text-subtitle-1 d-flex align-center">
+                            <span class="text-truncate">{{ item.book_title }}</span><v-spacer />
+                            <v-chip
+                                size="small"
+                                variant="tonal"
+                            >
+                                {{ item.chapter || t('annotation.location') }}
+                            </v-chip>
+                        </v-card-title>
+                        <v-card-text>
+                            <blockquote
+                                v-if="item.quote"
+                                class="annotation-quote"
+                            >
+                                {{ item.quote }}
+                            </blockquote>
+                            <p
+                                v-if="item.content"
+                                class="mt-2 mb-0 font-weight-medium"
+                            >
+                                {{ item.content }}
+                            </p>
+                            <div class="text-caption text-grey mt-2">
+                                {{ item.book_authors }} · {{ formatDate(item.update_time) }}
+                                <span v-if="item.book_deleted"> · {{ t('annotation.sourceDeleted') }}</span>
+                            </div>
+                        </v-card-text>
+                    </v-card>
+                </template>
                 <v-alert
                     v-if="error"
                     type="error"
@@ -120,12 +225,22 @@ const mainStore = useMainStore();
 const { t } = useI18n();
 const tree = ref([]);
 const books = ref([]);
+const annotations = ref([]);
+const viewMode = ref('books');
+const annotationQuery = ref('');
+const annotationKind = ref('');
+const specialView = ref('normal');
 const selectedId = ref(null);
 const recursive = ref(true);
 const error = ref('');
 const bookDialog = ref(false);
 const activeBook = ref(null);
 const activeCategoryIds = ref([]);
+const annotationKinds = computed(() => [
+    { title: t('annotation.allTypes'), value: '' },
+    { title: t('annotation.highlight'), value: 'highlight' },
+    { title: t('annotation.note'), value: 'note' },
+]);
 
 const flatten = nodes => nodes.flatMap(node => [node, ...flatten(node.children || [])]);
 const categoryOptions = computed(() => flatten(tree.value).map(node => ({
@@ -145,11 +260,25 @@ async function loadBooks() {
     if (rsp.err === 'ok') books.value = rsp.books || [];
     else error.value = rsp.msg;
 }
-function selectCategory(id) { selectedId.value = id; loadBooks(); }
+async function loadAnnotations() {
+    const params = new URLSearchParams({ recursive: String(recursive.value), size: '100' });
+    if (selectedId.value !== null && specialView.value === 'normal') params.set('category_id', selectedId.value);
+    if (specialView.value === 'detached') params.set('detached', 'true');
+    if (specialView.value === 'deleted') params.set('deleted', 'true');
+    if (annotationKind.value) params.set('kind', annotationKind.value);
+    if (annotationQuery.value) params.set('q', annotationQuery.value);
+    const rsp = await $backend(`/shelf/annotations?${params}`);
+    if (rsp.err === 'ok') annotations.value = rsp.annotations || [];
+    else error.value = rsp.msg;
+}
+function loadCurrent() { return viewMode.value === 'books' ? loadBooks() : loadAnnotations(); }
+function selectCategory(id) { selectedId.value = id; specialView.value = 'normal'; loadCurrent(); }
+function openAnnotation(item) { if (item.target_url) window.open(item.target_url, '_blank', 'noopener'); }
+function formatDate(value) { return value ? new Date(value).toLocaleDateString() : ''; }
 async function operate(payload) {
     const rsp = await $backend('/shelf/categories', { method: 'POST', body: JSON.stringify(payload) });
     if (rsp.err !== 'ok') error.value = rsp.msg;
-    else { error.value = ''; await loadTree(); await loadBooks(); }
+    else { error.value = ''; await loadTree(); await loadCurrent(); }
 }
 function editBook(book) {
     activeBook.value = book;
@@ -172,3 +301,9 @@ async function saveBookCategories() {
 useHead({ title: () => t('shelf.pageTitle') });
 onMounted(async () => { mainStore.setNavbar(true); await loadTree(); await loadBooks(); });
 </script>
+
+<style scoped>
+.annotation-card { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.annotation-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgb(39 55 45 / 10%); }
+.annotation-quote { margin: 0; padding-inline-start: 14px; border-inline-start: 2px solid rgb(73 106 86 / 35%); color: rgb(var(--v-theme-on-surface-variant)); white-space: pre-wrap; }
+</style>

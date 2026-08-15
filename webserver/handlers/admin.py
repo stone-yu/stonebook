@@ -976,6 +976,10 @@ class AdminBookDelete(BaseHandler):
         deleted_count = 0
         for bid in idlist:
             try:
+                from webserver.services.annotations import mark_book_deleted
+
+                books = self.get_books(ids=[bid])
+                mark_book_deleted(self.session, bid, books[0] if books else {})
                 # 删除图书
                 self.db.delete_book(bid)
                 deleted_count += 1

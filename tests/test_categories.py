@@ -173,4 +173,5 @@ def test_database_migration_creates_new_category_tables(tmp_path):
         "library_book_categories",
         "shelf_categories",
         "shelf_category_books",
+        "book_annotations",
     }.issubset(tables)

@@ -1,5 +1,8 @@
 <template>
-    <div id="txt-main" :class="mainStore.theme === 'dark' ? 'v-theme--dark' : 'v-theme--light'">
+    <div
+        id="txt-main"
+        :class="mainStore.theme === 'dark' ? 'v-theme--dark' : 'v-theme--light'"
+    >
         <v-navigation-drawer
             v-model="sidebar"
             :order="1"
@@ -246,7 +249,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useMainStore } from '@/stores/main';
@@ -288,14 +291,30 @@ const tip = reactive({
 });
 
 let intvl = null;
+let annotations = null;
 
-onMounted(() => {
+useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260815' }] });
+
+onMounted(async () => {
     mainStore.setNavbar(false);
     // 获取用户信息
     $backend('/user/info').then((rsp) => {
         if (rsp.err === 'ok') {
             mainStore.login(rsp);
         }
+    });
+    const module = await import('/static/annotations/talebook-annotations.js?v=20260815');
+    annotations = new module.TalebookAnnotations({
+        bookId: bookid,
+        format: 'txt',
+        getSelection: txtSelection,
+        getLocation: txtLocation,
+        locate: locateTxtAnnotation,
+        request: async (path, options) => {
+            const rsp = await $backend(path.replace(/^\/api/, ''), options);
+            if (rsp.err !== 'ok') throw new Error(rsp.msg || t('messages.error'));
+            return rsp;
+        },
     });
     openPreferredReader();
 });
@@ -358,7 +377,7 @@ const openPreferredReader = async () => {
     try {
         const rsp = await $backend(`/book/${bookid}`);
         const formats = rsp.book?.files?.map(file => String(file.format).toLowerCase()) || [];
-        if (rsp.err === 'ok' && formats.includes('epub')) {
+        if (rsp.err === 'ok' && formats.includes('epub') && !route.query.annotation) {
             window.location.replace(`/read/${bookid}`);
             return;
         }
@@ -366,6 +385,67 @@ const openPreferredReader = async () => {
         console.error(e);
     }
     init();
+};
+
+const chapterInfo = () => content.value[selected.value] || {};
+const txtLocation = () => ({
+    chapter: chapterInfo().title || '',
+    locator: { chapter_index: selected.value, offset: 0 },
+});
+
+const txtSelection = () => {
+    const selection = window.getSelection();
+    const root = document.querySelector('.novel-content');
+    if (!selection || selection.isCollapsed || !root?.contains(selection.anchorNode)) return null;
+    const range = selection.getRangeAt(0);
+    const before = range.cloneRange();
+    before.selectNodeContents(root);
+    before.setEnd(range.startContainer, range.startOffset);
+    const text = selection.toString().trim();
+    const offset = before.toString().length;
+    return {
+        quote: text,
+        prefix: root.textContent.slice(Math.max(0, offset - 120), offset),
+        suffix: root.textContent.slice(offset + text.length, offset + text.length + 120),
+        chapter: chapterInfo().title || '',
+        locator: { chapter_index: selected.value, offset },
+    };
+};
+
+const locateTxtAnnotation = async (annotation) => {
+    const chapterIndex = Number(annotation.locator?.chapter_index ?? 0);
+    if (selected.value !== chapterIndex) {
+        getNovelContent(chapterIndex);
+        while (loading.value) await new Promise(resolve => setTimeout(resolve, 30));
+    }
+    await nextTick();
+    const root = document.querySelector('.novel-content');
+    if (!root) return 'failed';
+    root.querySelectorAll('.ta-locate-mark').forEach(node => node.classList.remove('ta-locate-mark'));
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const preferred = Number(annotation.locator?.offset || 0);
+    let running = 0;
+    let fallback = null;
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const index = node.data.indexOf(annotation.quote || '');
+        if (index >= 0) {
+            fallback ||= node.parentElement;
+            if (Math.abs((running + index) - preferred) < 8) {
+                node.parentElement.classList.add('ta-locate-mark');
+                node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return 'exact';
+            }
+        }
+        running += node.data.length;
+    }
+    if (fallback) {
+        fallback.classList.add('ta-locate-mark');
+        fallback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return 'approximate';
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return annotation.quote ? 'failed' : 'exact';
 };
 
 const getNovelContent = (i) => {

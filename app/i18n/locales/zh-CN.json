@@ -353,6 +353,20 @@
     "pageTitle": "我的书架",
     "empty": "书架上还没有书，快去加入吧！"
   },
+  "annotation": {
+    "booksTab": "书籍",
+    "annotationsTab": "批注",
+    "search": "搜索原文、笔记或书名",
+    "currentShelf": "当前书架",
+    "detached": "未归入书架",
+    "deleted": "原书已删除",
+    "empty": "这里还没有批注",
+    "allTypes": "全部类型",
+    "highlight": "高亮",
+    "note": "笔记",
+    "location": "当前位置",
+    "sourceDeleted": "原书已删除"
+  },
   "category": {
     "libraryTitle": "书库分类",
     "shelfTitle": "我的分类",
