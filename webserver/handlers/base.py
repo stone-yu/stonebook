@@ -229,6 +229,7 @@ class BaseHandler(web.RequestHandler):
             set_language(lang)
 
     def initialize(self):
+        self._request_started_at = time.monotonic()
         self.session = self.settings["SessionMaker"]()  # 每个请求独立的 sql session
         self.db = self.settings["legacy"]
         self.cache = self.db.new_api
@@ -238,7 +239,24 @@ class BaseHandler(web.RequestHandler):
         self.cookies_cache = {}
 
     def on_finish(self):
-        self.session.close()
+        try:
+            if self.request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+                try:
+                    user_id = self.user_id() or 0
+                except (TypeError, ValueError):
+                    user_id = 0
+                duration_ms = int((time.monotonic() - self._request_started_at) * 1000)
+                logging.info(
+                    "[AUDIT] method=%s path=%s status=%s user_id=%s ip=%s duration_ms=%s",
+                    self.request.method,
+                    self.request.path,
+                    self.get_status(),
+                    user_id,
+                    self.request.remote_ip,
+                    duration_ms,
+                )
+        finally:
+            self.session.close()
 
     def static_url(self, path, **kwargs):
         if path.endswith("/"):

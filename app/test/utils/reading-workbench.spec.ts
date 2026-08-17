@@ -36,10 +36,10 @@ describe('reading workbench phase one', () => {
     it('keeps low-frequency capabilities on the More page', () => {
         const more = source('pages/more.vue');
 
-        for (const path of ['/audios', '/hot', '/recent', '/opds-readme', '/webdav-readme']) {
+        for (const path of ['/opds-readme', '/webdav-readme']) {
             expect(more).toContain(`href:'${path}'`);
         }
-        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series']) {
+        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series', '/audios', '/hot', '/recent']) {
             expect(more).not.toContain(`href:'${path}'`);
         }
     });
@@ -47,9 +47,23 @@ describe('reading workbench phase one', () => {
     it('keeps all book browsing filters under Find Books', () => {
         const discover = source('pages/discover.vue');
 
-        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series', '/rating']) {
+        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series', '/rating', '/hot', '/recent']) {
             expect(discover).toContain(`href: '${path}'`);
         }
+    });
+
+    it('hides audiobook entry points while retaining the underlying feature', () => {
+        const navigation = [
+            source('components/AppHeader.vue'),
+            source('components/themes/BuiltinThemeHeader.vue'),
+            source('pages/more.vue'),
+            source('pages/admin/settings.vue'),
+        ].join('\n');
+
+        expect(navigation).not.toContain("href: '/audios'");
+        expect(navigation).not.toContain("href: '/audio-jobs'");
+        expect(navigation).not.toContain('audiobookSettings');
+        expect(source('layouts/default.vue')).toContain('<AudiobookPlayer />');
     });
 
     it('provides a stable Find Books return link on discovery child routes', () => {

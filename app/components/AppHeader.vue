@@ -189,13 +189,12 @@
                                 v-bind="props"
                                 class="mr-4"
                                 icon
-                                size="45"
-                                variant="outlined"
+                                size="42"
+                                variant="text"
                             >
-                                <v-avatar
-                                    size="32"
-                                    :image="store.user.avatar"
-                                />
+                                <v-icon size="26">
+                                    mdi-account-circle-outline
+                                </v-icon>
                             </v-btn>
                         </template>
                         <v-list min-width="240">
@@ -213,7 +212,7 @@
                             <v-list-item
                                 to="/user/detail"
                                 :title="$t('messages.userCenter')"
-                                prepend-icon="mdi-account-box"
+                                prepend-icon="mdi-account-outline"
                             />
                             <v-list-item
                                 to="/user/history"
@@ -468,15 +467,7 @@ const items = computed(() => {
         { icon: 'mdi-home', href: '/', text: t('navigation.home') },
         { icon: 'mdi-bookshelf', href: '/user/shelf', text: t('navigation.myShelf') },
         { icon: 'mdi-book-search-outline', href: '/discover', text: t('navigation.findBooks') },
-        {
-            icon: 'mdi-menu',
-            text: t('navigation.more'),
-            groups: [
-                { icon: 'mdi-book-music-outline', href: '/audios', text: t('navigation.audiobooks') },
-                { icon: 'mdi-trending-up', href: '/hot', text: t('navigation.hot') },
-                { icon: 'mdi-history', href: '/recent', text: t('navigation.recent') },
-            ],
-        },
+        { icon: 'mdi-menu', href: '/more', text: t('navigation.more') },
     ];
     var admin_links = [
         {
@@ -487,7 +478,6 @@ const items = computed(() => {
                 { icon: 'mdi-cog', href: '/admin/settings', text: t('navigation.settings') },
                 { icon: 'mdi-human-greeting', href: '/admin/users', text: t('navigation.users') },
                 { icon: 'mdi-library-shelves', href: '/admin/books', text: t('navigation.books') },
-                { icon: 'mdi-playlist-music', href: '/audio-jobs', text: t('navigation.audiobookJobs') },
                 { icon: 'mdi-import', href: '/admin/imports', text: t('navigation.import') },
                 { icon: 'mdi-book-cog', href: '/admin/booksources', text: t('navigation.bookSources') },
                 { icon: 'mdi-palette', href: '/admin/themes', text: t('navigation.themes') },

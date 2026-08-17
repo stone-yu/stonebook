@@ -84,7 +84,7 @@ class WebDavDomainController:
 
     def get_domain_realm(self, path_info, environ):
         """Return the realm for the given path."""
-        return "Talebook WebDAV"
+        return "StoneBook WebDAV"
 
     def is_share_anonymous(self, share):
         """Return True if the share allows anonymous access."""

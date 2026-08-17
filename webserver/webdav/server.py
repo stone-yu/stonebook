@@ -32,7 +32,7 @@ def create_webdav_app(calibre_cache, sqlite_session):
     config = {
         "host": "0.0.0.0",
         "port": 8080,
-        "app_title": "Talebook/WebDAV",
+        "app_title": "StoneBook/WebDAV",
         "provider_mapping": {
             "/books": provider,
         },

@@ -37,4 +37,16 @@ describe('main store bootstrap state', () => {
         expect(store.sys).toEqual(sys);
         expect(store.user).toEqual(user);
     });
+
+    it('migrates only the legacy default project title', () => {
+        const store = useMainStore();
+
+        store.login({
+            err: 'ok',
+            sys: { title: 'TaleBook' },
+            user: { is_admin: false, is_login: false },
+        });
+
+        expect(store.sys.title).toBe('StoneBook');
+    });
 });

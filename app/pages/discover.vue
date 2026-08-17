@@ -89,6 +89,8 @@ const filters = computed(() => [
     { href: '/format', icon: 'mdi-file-outline', title: t('navigation.formats'), count: t('counts.formats', { count: store.sys.formats || 0 }) },
     { href: '/series', icon: 'mdi-library-shelves', title: t('navigation.series'), count: t('counts.series', { count: store.sys.series || 0 }) },
     { href: '/rating', icon: 'mdi-star-outline', title: t('navigation.ratings'), count: t('discover.ratingDescription') },
+    { href: '/hot', icon: 'mdi-trending-up', title: t('navigation.hot'), count: t('more.hotDesc') },
+    { href: '/recent', icon: 'mdi-history', title: t('navigation.recent'), count: t('more.recentDesc') },
 ]);
 
 function searchBooks() {

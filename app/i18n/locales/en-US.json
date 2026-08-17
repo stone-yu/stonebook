@@ -927,7 +927,7 @@
         "upToDate": "Already up to date",
         "updateAvailable": "New version {version} available. Please update to get the latest features and security fixes.",
         "checkError": "Failed to check for updates",
-        "dbInfo": "Talebook's own data (users, bookshelves, configuration) can be migrated to MySQL/MariaDB. Calibre book metadata remains in SQLite. A server restart is required after migration.",
+        "dbInfo": "StoneBook's own data (users, bookshelves, configuration) can be migrated to MySQL/MariaDB. Calibre book metadata remains in SQLite. A server restart is required after migration.",
         "dbMigrateWarning": "Migration will copy all current database data to the new database. A server restart is required. This action cannot be undone — please backup first!",
         "dbMigrateConfirmTitle": "Confirm database migration?",
         "dbMigrateSuccess": "Migration successful. Please restart the server for changes to take effect.",
@@ -1063,7 +1063,7 @@
     }
   },
   "install": {
-    "installTaleBook": "Install TaleBook",
+    "installTaleBook": "Install StoneBook",
     "websiteTitle": "Website Title",
     "adminUsername": "Admin Username",
     "adminPassword": "Admin Password",
@@ -1388,6 +1388,6 @@
     "deactivate": "Use Default",
     "deleteConfirm": "Delete this theme?",
     "defaultTheme": "Default Theme",
-    "defaultThemeDescription": "TaleBook native UI"
+    "defaultThemeDescription": "StoneBook native UI"
   }
 }

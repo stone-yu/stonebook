@@ -31,11 +31,6 @@ import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/stores/main';
 const store=useMainStore();const{t}=useI18n();store.setNavbar(true);useHead({title:()=>t('navigation.more')});
 const sections=computed(()=>[
-    {title:t('more.explore'),items:[
-        {href:'/audios',icon:'mdi-book-music-outline',title:t('navigation.audiobooks'),description:t('more.audioDesc')},
-        {href:'/hot',icon:'mdi-trending-up',title:t('navigation.hot'),description:t('more.hotDesc')},
-        {href:'/recent',icon:'mdi-history',title:t('navigation.recent'),description:t('more.recentDesc')},
-    ]},
     {title:t('more.connections'),items:[
         {href:'/opds-readme',icon:'mdi-cellphone-link',title:t('messages.opdsIntroduction'),description:'OPDS'},
         {href:'/webdav-readme',icon:'mdi-cloud-sync-outline',title:t('messages.webdavIntroduction'),description:'WebDAV'},

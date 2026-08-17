@@ -133,10 +133,9 @@
                         class="tb-theme-user"
                         variant="text"
                     >
-                        <v-avatar
-                            size="28"
-                            :image="store.user.avatar"
-                        />
+                        <v-icon size="24">
+                            mdi-account-circle-outline
+                        </v-icon>
                         <span v-if="display.mdAndUp.value">{{ store.user.nickname }}</span>
                     </v-btn>
                 </template>
@@ -144,7 +143,7 @@
                     <v-list-item
                         to="/user/detail"
                         :title="t('messages.userCenter')"
-                        prepend-icon="mdi-account-box"
+                        prepend-icon="mdi-account-outline"
                     />
                     <v-list-item
                         to="/user/history"
@@ -326,13 +325,7 @@ const navItems = computed(() => {
         { key: 'home', icon: 'mdi-home', href: '/', text: t('navigation.home') },
         { key: 'shelf', icon: 'mdi-bookshelf', href: '/user/shelf', text: t('navigation.myShelf') },
         { key: 'discover', icon: 'mdi-book-search-outline', href: '/discover', text: t('navigation.findBooks') },
-        {
-            key: 'more', icon: 'mdi-menu', text: t('navigation.more'), groups: [
-                { icon: 'mdi-book-music-outline', href: '/audios', text: t('navigation.audiobooks') },
-                { icon: 'mdi-trending-up', href: '/hot', text: t('navigation.hot') },
-                { icon: 'mdi-history', href: '/recent', text: t('navigation.recent') },
-            ],
-        },
+        { key: 'more', icon: 'mdi-menu', href: '/more', text: t('navigation.more') },
     ];
     if (store.user.is_admin) {
         items.push({
@@ -343,7 +336,6 @@ const navItems = computed(() => {
                 { icon: 'mdi-cog', href: '/admin/settings', text: t('navigation.settings') },
                 { icon: 'mdi-human-greeting', href: '/admin/users', text: t('navigation.users') },
                 { icon: 'mdi-library-shelves', href: '/admin/books', text: t('navigation.books') },
-                { icon: 'mdi-playlist-music', href: '/audio-jobs', text: t('navigation.audiobookJobs') },
                 { icon: 'mdi-import', href: '/admin/imports', text: t('navigation.import') },
                 { icon: 'mdi-book-cog', href: '/admin/booksources', text: t('navigation.bookSources') },
                 { icon: 'mdi-palette', href: '/admin/themes', text: t('navigation.themes') },

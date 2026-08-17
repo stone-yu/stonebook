@@ -10,6 +10,20 @@ import tempfile
 import traceback
 
 
+def normalize_site_title(value):
+    if isinstance(value, str) and value.strip().casefold() == "talebook":
+        return "StoneBook"
+    return value
+
+
+def normalize_header_brand(value):
+    if not isinstance(value, str):
+        return value
+    return value.replace("https://github.com/talebook/talebook", "https://github.com/stone-yu/talebook").replace(
+        "给 talebook 点击一个Star", "给 StoneBook 点击一个Star"
+    )
+
+
 def atomic_write_text(path, text):
     directory = os.path.dirname(path)
     filename = os.path.basename(path)
@@ -97,6 +111,9 @@ class SettingsLoader(dict):
         # behavior cannot be overwritten by auto.py/manual.py.
         if profile_settings is not None:
             self.update(profile_settings)
+
+        self["site_title"] = normalize_site_title(self.get("site_title"))
+        self["HEADER"] = normalize_header_brand(self.get("HEADER"))
 
     def dumpfile(self, filename="auto.py"):
         s = "\n".join("%-30s: %s," % (repr(k), repr(v)) for k, v in sorted(self.items()))

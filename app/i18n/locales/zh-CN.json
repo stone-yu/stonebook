@@ -957,7 +957,7 @@
         "upToDate": "已是最新版本",
         "updateAvailable": "发现新版本 {version}，请及时更新以获取最新功能和安全修复",
         "checkError": "检查更新失败",
-        "dbInfo": "Talebook 自身数据（用户、书架、配置等）支持迁移至 MySQL/MariaDB，Calibre 书籍元数据仍保持使用 SQLite。迁移完成后需重启服务器生效。",
+        "dbInfo": "StoneBook 自身数据（用户、书架、配置等）支持迁移至 MySQL/MariaDB，Calibre 书籍元数据仍保持使用 SQLite。迁移完成后需重启服务器生效。",
         "dbMigrateWarning": "迁移将把当前数据库所有数据复制到新数据库，完成后需要重启服务器。操作不可逆，请提前备份！",
         "dbMigrateConfirmTitle": "确认迁移数据库？",
         "dbMigrateSuccess": "数据迁移成功，请重启服务器以生效",
@@ -1083,7 +1083,7 @@
     }
   },
   "install": {
-    "installTaleBook": "安装 TaleBook",
+    "installTaleBook": "安装 StoneBook",
     "websiteTitle": "网站标题",
     "adminUsername": "管理员用户名",
     "adminPassword": "管理员登录密码",
@@ -1404,6 +1404,6 @@
     "deactivate": "恢复默认",
     "deleteConfirm": "确认删除此主题？",
     "defaultTheme": "默认主题",
-    "defaultThemeDescription": "TaleBook 原生界面风格"
+    "defaultThemeDescription": "StoneBook 原生界面风格"
   }
 }

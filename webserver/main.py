@@ -16,6 +16,7 @@ from tornado import web
 from tornado.options import define, options
 
 from webserver.i18n import _
+from webserver.logging_config import configure_logging
 
 
 # Monkey patch: 修复 Tornado 6.5 对中文文件名的严格验证
@@ -271,7 +272,7 @@ def make_app():
         }
     )
 
-    logging.info("Now, Running...")
+    logging.info("[STARTUP] StoneBook application initialized")
     AsyncService().setup(book_db, SessionMaker)
 
     from webserver.services.audiobook import AudiobookScheduler
@@ -371,19 +372,19 @@ def get_upload_size():
 
 
 def setup_logging():
-    # tornado 的 默认log 已在supervisor中配置为file了，这里再增加一个console的
-    # 创建控制台处理程序并设置格式
-    logger = logging.getLogger()
-    if options.log_file_prefix:
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(tornado.log.LogFormatter())
-        logger.addHandler(console_handler)
+    return configure_logging(CONF, options)
 
 
 def main():
     tornado.options.parse_command_line()
-    setup_logging()
+    log_file = setup_logging()
+    logging.info(
+        "[STARTUP] StoneBook starting host=%s port=%s profile=%s log=%s",
+        options.host or "0.0.0.0",
+        options.port,
+        os.environ.get("TALEBOOK_PROFILE", "default"),
+        log_file,
+    )
 
     # 应用 monkey patch 以支持中文文件名
     patch_tornado_header_validation()
@@ -391,6 +392,7 @@ def main():
     app = make_app()
     http_server = tornado.httpserver.HTTPServer(app, xheaders=True, max_buffer_size=get_upload_size())
     http_server.listen(options.port, options.host)
+    logging.info("[STARTUP] StoneBook listening on %s:%s", options.host or "0.0.0.0", options.port)
     tornado.ioloop.IOLoop.instance().start()
 
 

@@ -106,7 +106,7 @@ class UpdateChecker:
                 GITHUB_API_URL,
                 headers={
                     "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "TaleBook-UpdateChecker",
+                    "User-Agent": "StoneBook-UpdateChecker",
                 },
             )
             with urllib.request.urlopen(req, timeout=10, context=_UNVERIFIED_CONTEXT) as response:
@@ -217,7 +217,7 @@ class UpdateChecker:
         self._stop_event.clear()
         self._check_thread = threading.Thread(
             target=self._background_loop,
-            name="TaleBook.UpdateChecker",
+            name="StoneBook.UpdateChecker",
             daemon=True,
         )
         self._check_thread.start()

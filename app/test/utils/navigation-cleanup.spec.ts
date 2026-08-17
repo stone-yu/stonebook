@@ -41,4 +41,14 @@ describe('navigation shell cleanup', () => {
         expect(source('components/AppHeader.vue'))
             .toContain('href="https://github.com/stone-yu/talebook/issues"');
     });
+
+    it('uses a restrained account outline for the top user entry', () => {
+        const headers = [
+            source('components/AppHeader.vue'),
+            source('components/themes/BuiltinThemeHeader.vue'),
+        ].join('\n');
+
+        expect(headers).toContain('mdi-account-circle-outline');
+        expect(headers).not.toContain('prepend-icon="mdi-account-box"');
+    });
 });

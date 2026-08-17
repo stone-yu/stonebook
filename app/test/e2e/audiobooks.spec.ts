@@ -12,11 +12,12 @@ test.describe('Audiobook production and playback', () => {
         expect(response.ok()).toBeTruthy();
     });
 
-    test('marks audiobook navigation and pages as Beta', async ({ page }) => {
+    test('hides audiobook entry points while retaining direct pages', async ({ page }) => {
+        await page.goto('/');
+        await expect(page.locator('nav a[href="/audios"]')).toHaveCount(0);
+        await expect(page.locator('nav a[href="/audio-jobs"]')).toHaveCount(0);
+
         await page.goto('/audios');
-        const audiobookNav = page.locator('nav a[href="/audios"]');
-        await expect(audiobookNav.locator('.v-list-item-title')).toHaveText('有声书');
-        await expect(audiobookNav.getByTestId('audiobook-nav-beta')).toHaveText('Beta');
         await expect(page.getByTestId('audiobook-beta')).toHaveText('Beta');
 
         await page.goto('/book/1/audios');
@@ -27,8 +28,7 @@ test.describe('Audiobook production and playback', () => {
         await expect(page.getByTestId('audio-job-empty-state')).toBeVisible();
         await expect(page.getByTestId('open-library-to-create-job')).toHaveAttribute('href', '/library');
 
-        await page.getByText('管理', { exact: true }).click();
-        await expect(page.getByRole('link', { name: '有声书任务' })).toHaveAttribute('href', '/audio-jobs');
+        await expect(page.getByRole('link', { name: '有声书任务' })).toHaveCount(0);
     });
 
     test('shows the real book and expands every generation step', async ({ page, request }) => {

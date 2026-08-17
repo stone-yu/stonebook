@@ -44,7 +44,7 @@ export const useMainStore = defineStore('main', () => {
   const messages = ref<any[]>([])
 
   const site_title = ref("首页")
-  const site_title_template = ref("%s | talebook")
+  const site_title_template = ref("%s | StoneBook")
 
   // Actions
   function setLoading(isLoading: boolean) {
@@ -64,6 +64,14 @@ export const useMainStore = defineStore('main', () => {
     // 只有完整的用户信息响应才能替换初始化默认值，否则页头、页脚等计算属性
     // 会在跳转完成前读到 undefined。
     if (data?.sys && data?.user) {
+      if (typeof data.sys.title === 'string' && data.sys.title.trim().toLowerCase() === 'talebook') {
+        data.sys.title = 'StoneBook'
+      }
+      if (typeof data.sys.header === 'string') {
+        data.sys.header = data.sys.header
+          .replace('https://github.com/talebook/talebook', 'https://github.com/stone-yu/talebook')
+          .replace('给 talebook 点击一个Star', '给 StoneBook 点击一个Star')
+      }
       sys.value = data.sys
       user.value = data.user
     }

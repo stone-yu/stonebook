@@ -18,6 +18,7 @@ from webserver.base.trash_manager import TrashManager
 from webserver.handlers.admin_opds_sources import AdminOpdsSources
 from webserver.handlers.base import BaseHandler, auth, is_admin, js
 from webserver.i18n import _
+from webserver.logging_config import resolve_log_file
 from webserver.models import Reader, ScanFile
 from webserver.services.autofill import AutoFillService
 from webserver.services.batch_convert import BatchConvertService
@@ -1341,7 +1342,7 @@ DEFAULT_LOG_LINES = 500
 
 
 def _get_log_file():
-    return getattr(tornado_options, "log_file_prefix", None) or "/data/log/talebook.log"
+    return resolve_log_file(CONF, tornado_options)
 
 
 class AdminSystemLog(BaseHandler):
