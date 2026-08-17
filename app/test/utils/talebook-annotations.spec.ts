@@ -178,7 +178,10 @@ describe('TalebookAnnotations', () => {
 
     it('opens a read-only thought without bubbling page-turn events and edits on demand', async () => {
         const item = { id: 15, kind: 'note', quote: '可点击原文', content: '直接编辑', locator: {}, color: '#f6c85f' };
-        vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
+        vi.spyOn(globalThis, 'fetch')
+            .mockImplementationOnce(() => response({ err: 'ok', annotations: [item] }) as never)
+            .mockImplementationOnce(() => response({ err: 'ok' }) as never)
+            .mockImplementationOnce(() => response({ err: 'ok', annotations: [{ ...item, content: '原位更新' }] }) as never);
         const annotations = new TalebookAnnotations({ bookId: 7, format: 'pdf' });
         await vi.waitFor(() => expect(document.querySelector('[data-id="15"]')).not.toBeNull());
         const page = document.createElement('div');
@@ -209,5 +212,8 @@ describe('TalebookAnnotations', () => {
         await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
         expect(globalThis.fetch).toHaveBeenNthCalledWith(2, '/api/book/7/annotations/15', expect.objectContaining({ method: 'PUT' }));
         expect(JSON.parse((globalThis.fetch as never as ReturnType<typeof vi.fn>).mock.calls[1][1].body)).toMatchObject({ content: '原位更新' });
+        target.dispatchEvent(new Event('pointerenter'));
+        expect(peek.textContent).toContain('原位更新');
+        expect(peek.textContent).not.toContain('直接编辑');
     });
 });

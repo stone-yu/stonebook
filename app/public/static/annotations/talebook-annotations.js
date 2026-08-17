@@ -166,7 +166,7 @@ export class TalebookAnnotations {
         target.classList.add('ta-annotation-target');
         target.dataset.taAnnotationId = String(item.id);
         target.addEventListener('pointerenter', () => {
-            this.showAnnotationPeek(item, this.annotationTargetRect(target, frame));
+            this.showAnnotationPeek(this.annotationById(item.id) || item, this.annotationTargetRect(target, frame));
         });
         target.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
         for (const type of ['pointerdown', 'mousedown', 'mouseup']) {
@@ -174,8 +174,12 @@ export class TalebookAnnotations {
         }
         target.addEventListener('click', event => {
             this.consumeReaderEvent(event);
-            this.showAnnotationPeek(item, this.annotationTargetRect(target, frame));
+            this.showAnnotationPeek(this.annotationById(item.id) || item, this.annotationTargetRect(target, frame));
         });
+    }
+
+    annotationById(id) {
+        return this.items.find(item => Number(item.id) === Number(id));
     }
 
     consumeReaderEvent(event) {
