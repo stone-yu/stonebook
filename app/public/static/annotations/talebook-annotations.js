@@ -39,6 +39,8 @@ export class TalebookAnnotations {
         this.color = COLORS[0];
         this.annotationTargets = new WeakMap();
         this.hoverHideTimer = null;
+        this.editingItem = null;
+        this.thoughtLimit = 500;
         this.mount();
         this.bindSelectionToolbar();
         this.load().then(() => this.openTarget());
@@ -89,7 +91,7 @@ export class TalebookAnnotations {
         composer.querySelector('.ta-inline-close').addEventListener('click', () => this.closeThoughtComposer());
         this.annotationPeek.addEventListener('pointerenter', () => this.cancelAnnotationPeekHide());
         this.annotationPeek.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
-        this.annotationPeek.addEventListener('click', () => this.editAnnotation(this.peekItem));
+        this.annotationPeek.addEventListener('click', () => this.editAnnotation(this.peekItem, this.peekRect));
     }
 
     bindSelectionToolbar() {
@@ -158,26 +160,31 @@ export class TalebookAnnotations {
         target.classList.add('ta-annotation-target');
         target.dataset.taAnnotationId = String(item.id);
         target.addEventListener('pointerenter', () => {
-            const rect = target.getBoundingClientRect();
-            const frameRect = frame?.getBoundingClientRect ? frame.getBoundingClientRect() : null;
-            this.showAnnotationPeek(item, {
-                left: rect.left + (frameRect?.left || 0),
-                top: rect.top + (frameRect?.top || 0),
-                width: rect.width,
-                height: rect.height,
-            });
+            this.showAnnotationPeek(item, this.annotationTargetRect(target, frame));
         });
         target.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
         target.addEventListener('click', event => {
             event.stopPropagation();
-            this.editAnnotation(item);
+            this.editAnnotation(item, this.annotationTargetRect(target, frame));
         });
+    }
+
+    annotationTargetRect(target, frame = null) {
+        const rect = target.getBoundingClientRect();
+        const frameRect = frame?.getBoundingClientRect ? frame.getBoundingClientRect() : null;
+        return {
+            left: rect.left + (frameRect?.left || 0),
+            top: rect.top + (frameRect?.top || 0),
+            width: rect.width,
+            height: rect.height,
+        };
     }
 
     showAnnotationPeek(item, rect) {
         if (!item || !rect) return;
         this.cancelAnnotationPeekHide();
         this.peekItem = item;
+        this.peekRect = rect;
         const left = Math.min(window.innerWidth - 54, Math.max(54, rect.left + rect.width / 2));
         this.annotationPeek.style.left = `${left}px`;
         this.annotationPeek.style.top = `${Math.max(10, rect.top - 8)}px`;
@@ -205,10 +212,27 @@ export class TalebookAnnotations {
         window.setTimeout(() => card.classList.remove('ta-card-active'), 1800);
     }
 
-    editAnnotation(item) {
-        if (!item) return;
-        this.openAnnotation(item);
-        this.showEditor(item);
+    editAnnotation(item, rect = null) {
+        if (!item?.content) return;
+        this.annotationPeek.hidden = true;
+        this.editingItem = item;
+        this.thoughtLimit = Math.max(500, String(item.content).length);
+        this.selection = { quote: item.quote || '' };
+        this.selectionRect = rect || this.selectionRect || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+        const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
+        const textarea = composer.querySelector('textarea');
+        this.selectionToolbar.querySelector('.ta-selection-actions').hidden = true;
+        composer.querySelector('.ta-inline-title').textContent = '编辑想法';
+        composer.querySelector('.ta-inline-quote').textContent = item.quote || '';
+        composer.querySelector('.ta-inline-save').textContent = '保存想法';
+        textarea.maxLength = this.thoughtLimit;
+        textarea.value = item.content;
+        composer.hidden = false;
+        this.updateThoughtCount(item.content);
+        this.inlineStatus('');
+        this.positionSelectionToolbar(true);
+        this.selectionToolbar.hidden = false;
+        textarea.focus();
     }
 
     async handleSelectionAction(action) {
@@ -232,6 +256,12 @@ export class TalebookAnnotations {
     showThoughtComposer() {
         const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
         const textarea = composer.querySelector('textarea');
+        this.editingItem = null;
+        this.thoughtLimit = 500;
+        this.selectionToolbar.querySelector('.ta-selection-actions').hidden = false;
+        composer.querySelector('.ta-inline-title').textContent = '写想法';
+        composer.querySelector('.ta-inline-save').textContent = '添加想法';
+        textarea.maxLength = this.thoughtLimit;
         composer.hidden = false;
         composer.querySelector('.ta-inline-quote').textContent = this.selection.quote;
         textarea.value = '';
@@ -244,12 +274,15 @@ export class TalebookAnnotations {
     closeThoughtComposer() {
         const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
         if (composer) composer.hidden = true;
+        if (this.selectionToolbar) this.selectionToolbar.querySelector('.ta-selection-actions').hidden = false;
+        this.editingItem = null;
+        this.thoughtLimit = 500;
         if (this.selectionRect) this.positionSelectionToolbar(false);
     }
 
     updateThoughtCount(value) {
         const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
-        composer.querySelector('.ta-inline-count').textContent = `${value.length}/500`;
+        composer.querySelector('.ta-inline-count').textContent = `${value.length}/${this.thoughtLimit}`;
         composer.querySelector('.ta-inline-save').disabled = !value.trim();
     }
 
@@ -261,11 +294,18 @@ export class TalebookAnnotations {
         const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
         const content = composer.querySelector('textarea').value.trim();
         if (!content) return;
+        const wasEditing = Boolean(this.editingItem);
         composer.querySelector('.ta-inline-save').disabled = true;
         try {
-            await this.persistSelection('note', content);
+            if (this.editingItem) {
+                await this.request(`/api/book/${this.bookId}/annotations/${this.editingItem.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ content, color: this.editingItem.color || this.color }),
+                });
+                await this.load();
+            } else await this.persistSelection('note', content);
             this.hideSelectionToolbar();
-            this.toast('想法已保存');
+            this.toast(wasEditing ? '想法已更新' : '想法已保存');
         } catch (error) {
             this.inlineStatus(error.message);
             composer.querySelector('.ta-inline-save').disabled = false;

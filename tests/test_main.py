@@ -683,6 +683,7 @@ class TestBook(TestWithUserLogin):
         self.assertIn("ta-note-", page)
         self.assertIn("markClicked", page)
         self.assertIn("editAnnotation", page)
+        self.assertIn("20260817-inline-edit", page)
 
     def test_read_prefers_epub_when_other_formats_exist(self):
         book = {

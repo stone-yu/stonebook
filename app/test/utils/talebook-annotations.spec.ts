@@ -149,7 +149,7 @@ describe('TalebookAnnotations', () => {
         expect(toolbar.hidden).toBe(false);
     });
 
-    it('shows a thought affordance on annotation hover and opens the matching card', async () => {
+    it('shows a thought affordance on annotation hover and opens the inline editor', async () => {
         const item = { id: 12, kind: 'note', quote: '有想法的原文', content: '我的想法', locator: {}, color: '#f6c85f' };
         vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
         const annotations = new TalebookAnnotations({ bookId: 7, format: 'txt' });
@@ -167,11 +167,11 @@ describe('TalebookAnnotations', () => {
         expect(peek.textContent).toContain('想法');
         peek.click();
 
-        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(true);
-        expect(document.querySelector('[data-id="12"]')?.classList.contains('ta-card-active')).toBe(true);
-        const editor = document.querySelector('.ta-editor') as HTMLElement;
-        expect(editor.hidden).toBe(false);
-        expect((editor.querySelector('textarea') as HTMLTextAreaElement).value).toBe('我的想法');
+        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(false);
+        const composer = document.querySelector('.ta-inline-composer') as HTMLElement;
+        expect(composer.hidden).toBe(false);
+        expect(composer.textContent).toContain('编辑想法');
+        expect((composer.querySelector('textarea') as HTMLTextAreaElement).value).toBe('我的想法');
     });
 
     it('opens the matching thought editor when its marked text is clicked', async () => {
@@ -186,9 +186,16 @@ describe('TalebookAnnotations', () => {
         annotations.bindAnnotationTarget(target, item);
         target.click();
 
-        const editor = document.querySelector('.ta-editor') as HTMLElement;
-        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(true);
-        expect(editor.hidden).toBe(false);
-        expect((editor.querySelector('textarea') as HTMLTextAreaElement).value).toBe('直接编辑');
+        const composer = document.querySelector('.ta-inline-composer') as HTMLElement;
+        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(false);
+        expect(composer.hidden).toBe(false);
+        const textarea = composer.querySelector('textarea') as HTMLTextAreaElement;
+        expect(textarea.value).toBe('直接编辑');
+        textarea.value = '原位更新';
+        textarea.dispatchEvent(new Event('input'));
+        (composer.querySelector('.ta-inline-save') as HTMLButtonElement).click();
+        await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
+        expect(globalThis.fetch).toHaveBeenNthCalledWith(2, '/api/book/7/annotations/15', expect.objectContaining({ method: 'PUT' }));
+        expect(JSON.parse((globalThis.fetch as never as ReturnType<typeof vi.fn>).mock.calls[1][1].body)).toMatchObject({ content: '原位更新' });
     });
 });

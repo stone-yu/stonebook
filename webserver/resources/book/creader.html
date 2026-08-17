@@ -13,12 +13,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
   <link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap">
   <link rel="stylesheet" crossorigin href="style.css?v=v1.2.0">
-  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817-click">
+  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817-inline-edit">
 
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
     import { Reader } from "./candle-reader.es.js?v=v1.2.0"
-    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-click"
+    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-inline-edit"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
@@ -134,7 +134,11 @@
             const isThought = item.kind === 'note' && item.content
             if (!isThought && item.kind !== 'highlight') return
             try {
-              instance.rendition.annotations.highlight(item.locator.cfi, { annotationId: item.id }, () => isThought ? annotationSdk.editAnnotation(item) : annotationSdk.openAnnotation(item), isThought ? `ta-note-${item.id}` : '', { fill: item.color, 'fill-opacity': isThought ? '0.22' : '0.35' })
+              instance.rendition.annotations.highlight(item.locator.cfi, { annotationId: item.id }, event => {
+                const target = event.currentTarget
+                const frame = target.ownerDocument && target.ownerDocument.defaultView && target.ownerDocument.defaultView.frameElement
+                isThought ? annotationSdk.editAnnotation(item, annotationSdk.annotationTargetRect(target, frame)) : annotationSdk.openAnnotation(item)
+              }, isThought ? `ta-note-${item.id}` : '', { fill: item.color, 'fill-opacity': isThought ? '0.22' : '0.35' })
             } catch (error) { console.debug(error) }
           })
           window.setTimeout(bindContentAnnotations, 0)
@@ -143,9 +147,12 @@
       const instance = epubInstance()
       if (instance && instance.rendition) {
         instance.rendition.on('rendered', () => window.setTimeout(bindContentAnnotations, 0))
-        instance.rendition.on('markClicked', (cfiRange, data) => {
+        instance.rendition.on('markClicked', (cfiRange, data, contents) => {
           const item = annotationItems.find(row => row.id === Number(data && data.annotationId))
-          if (item) item.kind === 'note' && item.content ? annotationSdk.editAnnotation(item) : annotationSdk.openAnnotation(item)
+          if (!item) return
+          const target = contents && contents.document && contents.document.querySelector(`.ta-note-${item.id}`)
+          const frame = contents && contents.document && contents.document.defaultView && contents.document.defaultView.frameElement
+          item.kind === 'note' && item.content ? annotationSdk.editAnnotation(item, target ? annotationSdk.annotationTargetRect(target, frame) : null) : annotationSdk.openAnnotation(item)
         })
       }
     }
