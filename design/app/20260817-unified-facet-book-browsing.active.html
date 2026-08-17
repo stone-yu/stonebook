@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="统一分类、标签、作者、出版社、格式和已读书目的双栏浏览体验。">
+  <link rel="icon" href="data:,">
+  <title>统一维度书目浏览 · ACTIVE</title>
+  <style>body{max-width:960px;margin:auto;padding:24px;font:15px/1.7 system-ui;color:#24302b;background:#f4f6f5}header,section{margin-bottom:16px;padding:22px;border:1px solid #d8dfdb;border-radius:16px;background:#fff}h1,h2{margin-top:0}.status{color:#246b46;font-weight:700}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d8dfdb;text-align:left}@media(max-width:640px){body{padding:12px}header,section{padding:16px}}</style>
+</head>
+<body>
+  <header><h1>统一维度书目浏览</h1><p>创建日期 2026-08-17 · 所属模块 app · <span class="status">状态 ACTIVE</span> · 来源：用户反馈</p></header>
+  <section><h2>原始诉求</h2><p>已读书目、标签导览、出版社、作者、标签和文件格式页面与分类导览保持一致：左侧展示对应标签，右侧直接展示书目。</p></section>
+  <section><h2>交互方案</h2><table><thead><tr><th>页面</th><th>左侧</th><th>右侧</th></tr></thead><tbody><tr><td>出版社 / 作者 / 标签 / 格式</td><td>全部书籍及元数据项</td><td>所选项书目与分页</td></tr><tr><td>标签导览</td><td>预设标签分组</td><td>所选标签书目与分页</td></tr><tr><td>已读书目</td><td>在读、已读、阅读记录</td><td>对应书目或历史分组</td></tr><tr><td>分类导览</td><td>现有多级分类树</td><td>现有分类书目与管理操作</td></tr></tbody></table></section>
+  <section><h2>工程方案</h2><p>抽取响应式双栏书目布局与通用维度列表；元数据页面共享数据组件，URL 查询参数保存当前选择和分页。保留旧的详情路由。桌面使用 3:9 栅格，移动端纵向排列。</p></section>
+  <section><h2>测试结果</h2><table><thead><tr><th>验证项</th><th>结果</th></tr></thead><tbody><tr><td>组件测试</td><td><code>npx vitest run test/components/FacetListPanel.spec.ts test/components/BookBrowseLayout.spec.ts test/components/CategoryTreePanel.spec.ts</code>：3 个文件、4 个用例通过。</td></tr><tr><td>前端检查</td><td>本次涉及文件 ESLint 通过（无错误）；<code>npm run build-spa</code> 通过。</td></tr><tr><td>真实页面</td><td>连接本地真实后端验证作者、标签导览、分类导览；作者切换到“老子”后展示对应书目，分类导览展示分类树和 12 本书。</td></tr><tr><td>移动端</td><td>390 × 844 验证文件格式页，维度列表与书目纵向排列且无横向溢出。</td></tr><tr><td>限制</td><td>已读书目需要登录，本次游客浏览器未做实际数据验收；共享布局测试与生产构建已覆盖其渲染路径。</td></tr></tbody></table></section>
+</body>
+</html>

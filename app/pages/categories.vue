@@ -1,10 +1,14 @@
 <template>
-    <v-container fluid>
-        <v-row>
-            <v-col
-                cols="12"
-                md="3"
-            >
+    <div>
+        <BookBrowseLayout
+            :title="selectedTitle"
+            :books="books"
+            :loading="loading"
+            :error="error"
+            :empty-text="t('category.empty')"
+            key-prefix="category"
+        >
+            <template #sidebar>
                 <CategoryTreePanel
                     :title="t('category.libraryTitle')"
                     :tree="tree"
@@ -15,23 +19,17 @@
                     @select="selectCategory"
                     @operate="operate"
                 />
-            </v-col>
-            <v-col
-                cols="12"
-                md="9"
-            >
-                <div class="d-flex align-center mb-3">
-                    <h1 class="text-h5">
-                        {{ selectedTitle }}
-                    </h1><v-spacer />
-                    <v-switch
-                        v-if="selectedId && selectedId > 0"
-                        v-model="recursive"
-                        :label="t('category.includeDescendants')"
-                        hide-details
-                        @update:model-value="loadBooks"
-                    />
-                </div>
+            </template>
+            <template #controls>
+                <v-switch
+                    v-if="selectedId && selectedId > 0"
+                    v-model="recursive"
+                    :label="t('category.includeDescendants')"
+                    hide-details
+                    @update:model-value="loadBooks"
+                />
+            </template>
+            <template #default>
                 <div
                     v-if="books.length === 0"
                     class="text-center py-8 text-grey"
@@ -69,15 +67,8 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <v-alert
-                    v-if="error"
-                    type="error"
-                    class="mt-4"
-                >
-                    {{ error }}
-                </v-alert>
-            </v-col>
-        </v-row>
+            </template>
+        </BookBrowseLayout>
         <v-dialog
             v-model="bookDialog"
             max-width="500"
@@ -104,12 +95,13 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </v-container>
+    </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import CategoryTreePanel from '@/components/CategoryTreePanel.vue';
+import BookBrowseLayout from '@/components/BookBrowseLayout.vue';
 import { useMainStore } from '@/stores/main';
 import { useI18n } from 'vue-i18n';
 
@@ -122,6 +114,7 @@ const selectedId = ref(null);
 const recursive = ref(true);
 const uncategorizedCount = ref(0);
 const error = ref('');
+const loading = ref(false);
 const assignments = ref({});
 const bookDialog = ref(false);
 const activeBook = ref(null);
@@ -148,10 +141,17 @@ async function loadTree() {
 }
 async function loadBooks() {
     error.value = '';
+    loading.value = true;
     const url = selectedId.value === null ? '/library' : `/categories/${selectedId.value}/books?recursive=${recursive.value}`;
-    const rsp = await $backend(url);
-    if (rsp.err === 'ok') books.value = rsp.books || [];
-    else error.value = rsp.msg;
+    try {
+        const rsp = await $backend(url);
+        if (rsp.err === 'ok') books.value = rsp.books || [];
+        else error.value = rsp.msg;
+    } catch (exception) {
+        error.value = t('errors.networkError');
+    } finally {
+        loading.value = false;
+    }
 }
 function selectCategory(id) { selectedId.value = id; loadBooks(); }
 async function operate(payload) {
@@ -172,6 +172,6 @@ async function saveBookCategory() {
     bookDialog.value = false;
 }
 
-onMounted(async () => { store.setNavbar(true); await loadTree(); await loadBooks(); });
+onMounted(async () => { store.setNavbar(true); await Promise.all([loadTree(), loadBooks()]); });
 useHead({ title: () => t('category.libraryTitle') });
 </script>
