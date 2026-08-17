@@ -165,6 +165,7 @@ export class TalebookAnnotations {
         this.annotationTargets.set(target, item.id);
         target.classList.add('ta-annotation-target');
         target.dataset.taAnnotationId = String(item.id);
+        target.style.setProperty('--ta-mark', item.color || this.color);
         target.addEventListener('pointerenter', () => {
             this.showAnnotationPeek(this.annotationById(item.id) || item, this.annotationTargetRect(target, frame));
         });

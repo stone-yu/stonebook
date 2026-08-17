@@ -13,12 +13,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
   <link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap">
   <link rel="stylesheet" crossorigin href="style.css?v=v1.2.0">
-  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817-reader-sync">
+  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817-visible-thoughts">
 
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
     import { Reader } from "./candle-reader.es.js?v=v1.2.0"
-    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-reader-sync"
+    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-visible-thoughts"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
@@ -135,7 +135,14 @@
               const frame = target.ownerDocument && target.ownerDocument.defaultView && target.ownerDocument.defaultView.frameElement
               const current = annotationSdk.annotationById(item.id) || item
               isThought ? annotationSdk.showAnnotationPeek(current, annotationSdk.annotationTargetRect(target, frame)) : annotationSdk.openAnnotation(current)
-            }, isThought ? `ta-note-${item.id}` : '', { fill: item.color, 'fill-opacity': isThought ? '0.22' : '0.35' })
+            }, isThought ? `ta-note-${item.id}` : '', isThought ? {
+              fill: item.color,
+              'fill-opacity': '0.42',
+              stroke: item.color,
+              'stroke-opacity': '0.9',
+              'stroke-width': '1.5',
+              'mix-blend-mode': 'normal',
+            } : { fill: item.color, 'fill-opacity': '0.35' })
           } catch (error) { console.debug(error) }
         })
         window.setTimeout(bindContentAnnotations, 0)

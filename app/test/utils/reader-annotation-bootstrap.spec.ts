@@ -12,5 +12,8 @@ describe('reader annotation bootstrap', () => {
         expect(reader).toContain('setupAnnotationRendition()')
         expect(reader).toContain("instance.rendition.on('rendered'")
         expect(reader).toContain("instance.rendition.on('markClicked'")
+        expect(reader).toContain("'fill-opacity': '0.42'")
+        expect(reader).toContain("'stroke-width': '1.5'")
+        expect(reader).toContain("'mix-blend-mode': 'normal'")
     })
 })

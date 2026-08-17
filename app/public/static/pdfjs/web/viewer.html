@@ -26,9 +26,10 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="google" content="notranslate">
     <title>PDF.js viewer</title>
+    <link rel="icon" type="image/svg+xml" href="/logo/bookshelf.svg">
 
     <link rel="stylesheet" href="viewer.css">
-    <link rel="stylesheet" href="../../annotations/talebook-annotations.css?v=20260817-reader-sync">
+    <link rel="stylesheet" href="../../annotations/talebook-annotations.css?v=20260817-visible-thoughts">
 
 <!-- This snippet is used in production (included from viewer.html) -->
 <link rel="resource" type="application/l10n" href="locale/locale.properties">
@@ -431,7 +432,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     <input type="file" id="fileInput" class="hidden">
     <script type="module">
-      import { TalebookAnnotations } from '../../annotations/talebook-annotations.js?v=20260817-reader-sync';
+      import { TalebookAnnotations } from '../../annotations/talebook-annotations.js?v=20260817-visible-thoughts';
 
       const file = new URLSearchParams(location.search).get('file') || '';
       const match = file.match(/\/api\/book\/(\d+)/);

@@ -161,6 +161,7 @@ describe('TalebookAnnotations', () => {
         HTMLElement.prototype.scrollIntoView = vi.fn();
 
         annotations.bindAnnotationTarget(target, item);
+        expect(target.style.getPropertyValue('--ta-mark')).toBe('#f6c85f');
         target.dispatchEvent(new Event('pointerenter'));
         const peek = document.querySelector('.ta-annotation-peek') as HTMLButtonElement;
         expect(peek.hidden).toBe(false);
