@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="StoneBook 生产镜像移除有声书依赖与挂载方案" />
+  <link rel="icon" href="data:," />
+  <title>生产镜像移除有声书能力 · ACTIVE</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #243047; background: #f5f7fb; }
+    * { box-sizing: border-box; } body { margin: 0; } main { width: min(940px, calc(100% - 32px)); margin: 32px auto; }
+    header, section { margin-bottom: 18px; padding: 24px; border: 1px solid #dbe3ee; border-radius: 18px; background: #fff; }
+    h1, h2 { margin-top: 0; } p, li { line-height: 1.72; } code { padding: 2px 5px; border-radius: 5px; background: #eef2f7; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; } .meta span { padding: 5px 10px; border-radius: 999px; background: #e9f4ef; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; } th, td { padding: 10px; border: 1px solid #dbe3ee; text-align: left; }
+    @media (max-width: 600px) { main { width: calc(100% - 20px); margin: 10px auto; } header, section { padding: 18px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header><h1>生产镜像移除有声书能力</h1><p>缩小默认 SPA 镜像，并让 Compose 的持久化目录重新聚焦应用状态、扫描来源和正式书库。</p><div class="meta"><span>状态：ACTIVE</span><span>创建日期：2026-08-17</span><span>所属模块：docker</span><span>影响范围：镜像、Compose、启动自检、部署文档</span><span>需求来源：用户原话</span></div></header>
+  <section><h2>1. 原始诉求</h2><p>“1.移除生产镜像中的 ffmpeg 和 voicebook-tool；2.提供的docker compose yml 也删除有声书相关的内容”</p></section>
+  <section><h2>2. 目标与边界</h2><ul><li>默认生产镜像不安装 FFmpeg 和 <code>voicebook-tool</code>。</li><li>生产镜像、启动自检和 Compose 不再创建、声明或要求 <code>/audiobooks</code>。</li><li>默认关闭有声书 API 与后台调度，关闭状态下不得创建存储目录。</li><li>保留已有业务代码、表结构及旧布局识别，便于未来重新设计和避免旧数据被误初始化。</li></ul></section>
+  <section><h2>3. 方案比较与选择</h2><table><tr><th>方案</th><th>结果</th></tr><tr><td>只删 Compose 挂载</td><td>镜像不变，调度器仍可能写 <code>/audiobooks</code>，不采用。</td></tr><tr><td>只删二进制依赖</td><td>镜像变小，但界面/API 可能暴露不可用能力，不采用。</td></tr><tr><td>依赖、运行契约与默认开关一起下线</td><td>镜像与部署契约一致；保留代码以便未来恢复，采用。</td></tr></table></section>
+  <section><h2>4. 实现方案</h2><ol><li>删除 Dockerfile 中 FFmpeg 安装、生产目录及卷声明，删除 Python 依赖中的 <code>voicebook-tool</code>。</li><li>Compose 只挂载 <code>/data</code>、<code>/imports</code>、<code>/library</code>。</li><li>生产启动脚本和自检只检查三类运行根；旧 <code>/data/books/audiobooks</code> 仍用于识别待人工迁移的旧布局。</li><li>默认关闭有声书功能和 runner，并让 scheduler 在禁用检查后才初始化存储。</li><li>同步中英文部署文档与静态契约测试。</li></ol></section>
+  <section><h2>5. 风险与兼容性</h2><p>已有宿主机 <code>audiobooks/</code> 不会被删除，只是不再挂载。直接调用旧有声书接口将得到禁用结果。未来恢复时应重新评估独立 worker 或可选镜像，而不是重新放回默认 SPA 镜像。</p></section>
+  <section><h2>6. 测试结果</h2><ul><li><code>pytest tests/test_docker_persistence_config.py tests/test_self_check.py tests/test_audiobook_reliability.py tests/test_logging_config.py tests/test_runtime_identity_config.py -q</code>：52 项通过。</li><li><code>vitest run test/plugins/talebook.nuxt.spec.ts</code>：8 项通过；存在既有 i18n/Vuetify 测试环境警告。</li><li>Ruff check/format 与前端 ESLint：通过。</li><li><code>docker-compose -f docker-compose.yml config</code>：通过，展开结果仅包含 <code>/data</code>、<code>/imports</code>、<code>/library</code>；仅提示 Compose <code>version</code> 字段已废弃。</li><li><code>make check-design</code> 与 <code>git diff --check</code>：通过。</li><li>未执行本地镜像构建：本机 Docker daemon 未运行。已用静态契约测试验证生产阶段不含 FFmpeg、Voicebook 和有声书卷；推送 tag 后由 GitHub Actions 完成实际多架构构建。</li></ul></section>
+</main>
+</body>
+</html>

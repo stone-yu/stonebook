@@ -114,6 +114,10 @@ class SettingsLoader(dict):
         if profile_settings is not None:
             self.update(profile_settings)
 
+        if os.environ.get("TALEBOOK_DISABLE_AUDIOBOOKS", "").strip().lower() in {"1", "true", "yes", "on"}:
+            self["AUDIOBOOK_ENABLED"] = False
+            self["AUDIOBOOK_RUNNER_ENABLED"] = False
+
         self["site_title"] = normalize_site_title(self.get("site_title"))
         self["HEADER"] = normalize_header_brand(self.get("HEADER"))
 

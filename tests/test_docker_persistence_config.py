@@ -10,7 +10,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PERSISTENT_VOLUME = "${TALEBOOK_DATA_DIR:-./data}:/data"
 IMPORTS_VOLUME = "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
 LIBRARY_VOLUME = "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
-AUDIOBOOKS_VOLUME = "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"
 
 
 def read(relative_path):
@@ -21,7 +20,7 @@ def test_production_compose_defaults_to_persistent_local_data_directory():
     compose = yaml.safe_load(read("docker-compose.yml"))
     volumes = compose["services"]["talebook"]["volumes"]
 
-    assert volumes == [PERSISTENT_VOLUME, IMPORTS_VOLUME, LIBRARY_VOLUME, AUDIOBOOKS_VOLUME]
+    assert volumes == [PERSISTENT_VOLUME, IMPORTS_VOLUME, LIBRARY_VOLUME]
     assert all(not volume.startswith("/tmp/") for volume in volumes)
 
 
@@ -35,10 +34,12 @@ def test_runtime_uses_flat_storage_roots_and_persistent_calibre_config():
     assert '"extract_path"  : "/data/work/extract/"' in settings
     assert '"with_library"  : "/library/"' in settings
     assert "sqlite:////data/calibre-webserver.db" in settings
-    assert '"AUDIOBOOK_PATH": "/audiobooks"' in settings
+    assert '"AUDIOBOOK_ENABLED": False' in settings
+    assert '"AUDIOBOOK_RUNNER_ENABLED": False' in settings
 
     dockerfile = read("Dockerfile")
     assert "ENV CALIBRE_CONFIG_DIRECTORY=/data/calibre" in dockerfile
+    assert "ENV TALEBOOK_DISABLE_AUDIOBOOKS=1" in dockerfile
     assert "/root/.config/calibre" not in read("docker/start.sh")
     assert "/root/.config/calibre" not in read("docker/start-dev.sh")
 
@@ -59,7 +60,17 @@ def test_image_prebuild_keeps_application_state_and_library_separate():
     assert "mkdir -p /prebuilt/data /prebuilt/library" in dockerfile
     assert "cp -a /data/. /prebuilt/data/" in dockerfile
     assert "cp -a /library/. /prebuilt/library/" in dockerfile
-    assert 'VOLUME ["/data", "/imports", "/library", "/audiobooks"]' in dockerfile
+    production = dockerfile.split("FROM server AS production", 1)[1].split("FROM production AS production-ssr", 1)[0]
+    assert 'VOLUME ["/data", "/imports", "/library"]' in production
+    assert "/audiobooks" not in production
+
+
+def test_production_image_excludes_audiobook_runtime_dependencies():
+    dockerfile = read("Dockerfile")
+    requirements = read("requirements.txt")
+
+    assert "apt-get install -y --no-install-recommends ffmpeg" not in dockerfile
+    assert "voicebook-tool" not in requirements
 
     start = read("docker/start.sh")
     assert "cp /prebuilt/data/calibre-webserver.db /data/" in start
@@ -74,6 +85,6 @@ def test_deployment_docs_explain_persistence_and_do_not_recommend_tmp_data():
         assert "TALEBOOK_DATA_DIR" in content
         assert "TALEBOOK_IMPORTS_DIR" in content
         assert "TALEBOOK_LIBRARY_DIR" in content
-        assert "TALEBOOK_AUDIOBOOKS_DIR" in content
+        assert "TALEBOOK_AUDIOBOOKS_DIR" not in content
         assert PERSISTENT_VOLUME in content or "$PWD/data:/data" in content
         assert "-v /tmp/demo:/data" not in content

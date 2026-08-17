@@ -49,16 +49,15 @@ Deployment is relatively simple, it is recommended to use docker, image address:
 It is recommended to use `docker-compose`, download the configuration file [docker-compose.yml](docker-compose.yml) from the repository, and then execute the command to start.
 If you want to modify the mounted directories or ports, please modify the docker-compose.yml file.
 
-The Compose file uses four persistent roots: `data/` for application state, `imports/` for source files, `library/` for the managed Calibre library, and `audiobooks/` for generated audio assets. Back up all four. To use other locations, set absolute paths in a colocated `.env` file:
+The Compose file uses three persistent roots: `data/` for application state, `imports/` for source files, and `library/` for the managed Calibre library. Back up all three. To use other locations, set absolute paths in a colocated `.env` file:
 
 ```dotenv
 TALEBOOK_DATA_DIR=/path/to/talebook-data
 TALEBOOK_IMPORTS_DIR=/path/to/import-source
 TALEBOOK_LIBRARY_DIR=/path/to/calibre-library
-TALEBOOK_AUDIOBOOKS_DIR=/path/to/audiobooks
 ```
 
-This is a breaking storage-layout change. A deployment that still contains `/data/books` is rejected and is never migrated automatically. Stop the old container and back it up first. Move `books/library`, `books/imports`, and `books/audiobooks` to their new roots; move the business database and state directories to the flat `data/` root; and move upload, conversion, and extraction workspaces under `data/work/` before starting the new image.
+This is a breaking storage-layout change. A deployment that still contains `/data/books` is rejected and is never migrated automatically. Stop the old container and back it up first. Move `books/library` and `books/imports` to their new roots; move the business database and state directories to the flat `data/` root; and move upload, conversion, and extraction workspaces under `data/work/`. Old audiobook assets are no longer mounted by the image and should be retained as a separate backup.
 
 ```
 wget https://raw.githubusercontent.com/talebook/talebook/master/docker-compose.yml

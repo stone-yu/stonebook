@@ -1,9 +1,11 @@
 import logging
+import os
+import sys
 from types import SimpleNamespace
 from unittest import mock
 
 from webserver.handlers.base import BaseHandler
-from webserver.loader import normalize_header_brand, normalize_site_title
+from webserver.loader import SettingsLoader, normalize_header_brand, normalize_site_title
 from webserver.logging_config import configure_logging, resolve_log_file
 
 
@@ -19,6 +21,20 @@ def test_legacy_repository_urls_are_normalized():
 
     assert upstream == "https://github.com/stone-yu/stonebook/issues"
     assert old_fork == "https://github.com/stone-yu/stonebook/issues"
+
+
+def test_production_runtime_disables_persisted_audiobook_settings():
+    persisted = SimpleNamespace(settings={"AUDIOBOOK_ENABLED": True, "AUDIOBOOK_RUNNER_ENABLED": True})
+
+    with (
+        mock.patch.dict(os.environ, {"TALEBOOK_DISABLE_AUDIOBOOKS": "1"}),
+        mock.patch.dict(sys.modules, {"auto": persisted}),
+        mock.patch.object(SettingsLoader, "set_store_path", return_value="/tmp"),
+    ):
+        settings = SettingsLoader()
+
+    assert settings["AUDIOBOOK_ENABLED"] is False
+    assert settings["AUDIOBOOK_RUNNER_ENABLED"] is False
 
 
 def test_resolve_log_file_uses_data_directory_for_local_profile(tmp_path):

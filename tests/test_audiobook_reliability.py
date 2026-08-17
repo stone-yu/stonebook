@@ -177,6 +177,22 @@ def _write_generated_chapter(arguments, chapter_number=1):
     return output
 
 
+def test_disabled_scheduler_does_not_initialize_audiobook_storage():
+    scheduler = object.__new__(AudiobookScheduler)
+
+    with (
+        mock.patch.dict(
+            "webserver.services.audiobook.CONF",
+            {"AUDIOBOOK_ENABLED": False, "AUDIOBOOK_RUNNER_ENABLED": False},
+        ),
+        mock.patch("webserver.services.audiobook.AudiobookStorage") as storage,
+    ):
+        scheduler.setup(SimpleNamespace(), _session_maker())
+
+    storage.assert_not_called()
+    assert scheduler.started is True
+
+
 def test_silent_voicebook_process_keeps_calling_control_callback():
     with tempfile.TemporaryDirectory() as directory:
         storage = AudiobookStorage(directory)

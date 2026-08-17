@@ -586,13 +586,13 @@ class AudiobookScheduler:
             return
         self.book_db = book_db
         self.session_maker = session_maker
+        self.started = True
+        if not CONF.get("AUDIOBOOK_ENABLED", False) or not CONF.get("AUDIOBOOK_RUNNER_ENABLED", False):
+            return
         self.storage = AudiobookStorage()
         self.storage.ensure()
         self.worker_id = f"{os.getpid()}-{uuid.uuid4().hex[:8]}"
         self._last_maintenance = 0.0
-        self.started = True
-        if not CONF.get("AUDIOBOOK_ENABLED", True) or not CONF.get("AUDIOBOOK_RUNNER_ENABLED", True):
-            return
         workers = min(3, max(1, int(CONF.get("AUDIOBOOK_WORKERS", 1))))
         for index in range(workers):
             thread = threading.Thread(target=self._loop, name=f"audiobook-worker-{index}", daemon=True)

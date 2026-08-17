@@ -1496,7 +1496,6 @@ services:
       - "${TALEBOOK_DATA_DIR:-./data}:/data"
       - "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
       - "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
-      - "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"
     ports:
       - "8080:80"
       - "8443:443"
@@ -1514,7 +1513,7 @@ services:
 
 #### 启动命令
 
-默认使用 Compose 文件旁的 `./data`、`./imports`、`./library` 和 `./audiobooks`。可分别通过 `TALEBOOK_DATA_DIR`、`TALEBOOK_IMPORTS_DIR`、`TALEBOOK_LIBRARY_DIR` 和 `TALEBOOK_AUDIOBOOKS_DIR` 指向其他绝对路径。旧版 `/data/books` 布局必须停服后人工迁移，新版不会自动移动或回退。
+默认使用 Compose 文件旁的 `./data`、`./imports` 和 `./library`。可分别通过 `TALEBOOK_DATA_DIR`、`TALEBOOK_IMPORTS_DIR` 和 `TALEBOOK_LIBRARY_DIR` 指向其他绝对路径。旧版 `/data/books` 布局必须停服后人工迁移，新版不会自动移动或回退。
 
 ```bash
 # 下载 docker-compose.yml
@@ -1545,7 +1544,7 @@ docker run -d \
 mkdir -p /data/log/nginx/
 mkdir -p /var/www/talebook/
 mkdir -p /data/{settings,progress,themes,logo,ssl,calibre,work/upload,work/convert,work/extract}
-mkdir -p /imports /library /audiobooks
+mkdir -p /imports /library
 export CALIBRE_CONFIG_DIRECTORY=/data/calibre
 ```
 

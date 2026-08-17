@@ -23,7 +23,6 @@ import sys
 DATA_DIR = os.environ.get("TALEBOOK_DATA_DIR", "/data")
 IMPORTS_DIR = os.environ.get("TALEBOOK_IMPORTS_DIR", "/imports")
 LIBRARY_DIR = os.environ.get("TALEBOOK_LIBRARY_DIR", "/library")
-AUDIOBOOKS_DIR = os.environ.get("TALEBOOK_AUDIOBOOKS_DIR", "/audiobooks")
 SERVER_DIR = os.environ.get("TALEBOOK_SERVER_DIR", "/var/www/talebook")
 STATUS_DIR = os.environ.get("TALEBOOK_STATUS_DIR", "/var/www/talebook/status")
 RUN_USER = os.environ.get("TALEBOOK_RUN_USER", "talebook")
@@ -111,7 +110,7 @@ def check_permission():
             previous = f.read().strip()
 
     if previous != current:
-        if not run(["chown", "-R", "%s:%s" % (RUN_USER, RUN_USER), DATA_DIR, LIBRARY_DIR, AUDIOBOOKS_DIR]):
+        if not run(["chown", "-R", "%s:%s" % (RUN_USER, RUN_USER), DATA_DIR, LIBRARY_DIR]):
             return False, "permission_denied"
         with open(permission_file, "w") as f:
             f.write(current)
@@ -119,7 +118,7 @@ def check_permission():
         # settings 很小，标记命中时仍定向修复，避免宿主目录重建或预置文件复制后属主失真。
         return False, "permission_denied"
 
-    for directory in (DATA_DIR, LIBRARY_DIR, AUDIOBOOKS_DIR):
+    for directory in (DATA_DIR, LIBRARY_DIR):
         if not check_atomic_write(directory):
             return False, "permission_denied"
 

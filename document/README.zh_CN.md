@@ -61,7 +61,6 @@ docker run -d --name talebook -p 80:80 \
   -v /srv/talebook/data:/data \
   -v /srv/talebook/imports:/imports \
   -v /srv/talebook/library:/library \
-  -v /srv/talebook/audiobooks:/audiobooks \
   talebook/talebook
 ```
 

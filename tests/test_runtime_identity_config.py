@@ -62,6 +62,7 @@ def test_ssr_start_repairs_settings_and_probes_both_mounts_as_application_user()
 
     assert "chown -R talebook:talebook /data/settings || exit 1" in script
     assert "gosu talebook:talebook sh -c" in script
-    assert "for directory in /data /library /audiobooks" in script
+    assert "for directory in /data /library" in script
+    assert "for directory in /data /library /audiobooks" not in script
     assert "mktemp" in script
     assert 'mv "$tmp" "$moved"' in script

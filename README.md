@@ -113,16 +113,15 @@ Skill 会在写入前确认目标与权限，对管理员写入、删除和批�
 推荐使用`docker-compose`，下载仓库中的配置文件[docker-compose.yml](docker-compose.yml)，然后执行命令启动即可。
 若希望修改挂载的目录或端口，请修改docker-compose.yml文件。
 
-当前版本将四类数据分开持久化：`data/` 保存数据库、配置、日志和工作状态，`imports/` 保存待扫描的原始文件，`library/` 是 Calibre 正式书库，`audiobooks/` 保存有声书资产。重新构建或替换容器不会删除这些目录，请一起备份。需要使用其他位置时，可在同目录的 `.env` 中设置绝对路径：
+当前版本将三类数据分开持久化：`data/` 保存数据库、配置、日志和工作状态，`imports/` 保存待扫描的原始文件，`library/` 是 Calibre 正式书库。重新构建或替换容器不会删除这些目录，请一起备份。需要使用其他位置时，可在同目录的 `.env` 中设置绝对路径：
 
 ```dotenv
 TALEBOOK_DATA_DIR=/path/to/talebook-data
 TALEBOOK_IMPORTS_DIR=/path/to/import-source
 TALEBOOK_LIBRARY_DIR=/path/to/calibre-library
-TALEBOOK_AUDIOBOOKS_DIR=/path/to/audiobooks
 ```
 
-这是一次破坏性目录升级。若旧部署的数据位于 `/data/books`，新版会拒绝初始化且不会自动移动数据。请先停服并备份，然后按以下关系迁移：`books/library` → 新的 library 目录，`books/imports` → imports，`books/audiobooks` → audiobooks；`books/calibre-webserver.db` 与 settings、progress、themes、logo、ssl 提升到 data 根目录；upload、convert、extract 移入 `data/work/`。确认迁移完成后再启动新版。
+这是一次破坏性目录升级。若旧部署的数据位于 `/data/books`，新版会拒绝初始化且不会自动移动数据。请先停服并备份，然后迁移 `books/library` 和 `books/imports`；`books/calibre-webserver.db` 与 settings、progress、themes、logo、ssl 提升到 data 根目录；upload、convert、extract 移入 `data/work/`。旧有声书资产不会被新版容器挂载，请单独保留备份。确认迁移完成后再启动新版。
 
 ```
 wget https://raw.githubusercontent.com/talebook/talebook/master/docker-compose.yml
@@ -132,12 +131,12 @@ docker-compose -f docker-compose.yml  up -d
 
 如果使用原生docker，那么执行命令：
 
-`docker run -d --name talebook -p <本机端口>:80 -v <data目录>:/data -v <导入目录>:/imports -v <Calibre书库>:/library -v <有声书目录>:/audiobooks talebook/talebook`
+`docker run -d --name talebook -p <本机端口>:80 -v <data目录>:/data -v <导入目录>:/imports -v <Calibre书库>:/library talebook/talebook`
 
 
 例如
 
-`mkdir -p "$PWD"/{data,imports,library,audiobooks} && docker run -d --name talebook -p 8080:80 -v "$PWD/data:/data" -v "$PWD/imports:/imports" -v "$PWD/library:/library" -v "$PWD/audiobooks:/audiobooks" talebook/talebook`
+`mkdir -p "$PWD"/{data,imports,library} && docker run -d --name talebook -p 8080:80 -v "$PWD/data:/data" -v "$PWD/imports:/imports" -v "$PWD/library:/library" talebook/talebook`
 
 
 ## Star History

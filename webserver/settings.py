@@ -74,7 +74,7 @@ settings = {
     "EPUB_VIEWER": "creader.html",
     "PDF_VIEWER": "/static/pdfjs/web/viewer.html?file=%(pdf_url)s",
 
-    "AUDIOBOOK_ENABLED": True,
+    "AUDIOBOOK_ENABLED": False,
     "AUDIOBOOK_PATH": "/audiobooks",
     "AUDIOBOOK_OWNER_GENERATE": False,
     "AUDIOBOOK_WORKERS": 1,
@@ -87,7 +87,7 @@ settings = {
     "AUDIOBOOK_CANCEL_KILL_SECONDS": 5,
     "AUDIOBOOK_MAINTENANCE_SECONDS": 3600,
     "AUDIOBOOK_BACKUP_RETENTION": 3,
-    "AUDIOBOOK_RUNNER_ENABLED": True,
+    "AUDIOBOOK_RUNNER_ENABLED": False,
     "VOICEBOOK_COMMAND": "voicebook-tool",
     "PODCAST_ENABLED": True,
     "PODCAST_IP_RETENTION_DAYS": 90,

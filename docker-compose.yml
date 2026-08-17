@@ -7,11 +7,10 @@ services:
     restart: always
     image: talebook/talebook
     volumes:
-      # 应用状态、扫描来源、Calibre 书库和有声书资产使用独立持久化目录。
+      # 应用状态、扫描来源和 Calibre 书库使用独立持久化目录。
       - "${TALEBOOK_DATA_DIR:-./data}:/data"
       - "${TALEBOOK_IMPORTS_DIR:-./imports}:/imports"
       - "${TALEBOOK_LIBRARY_DIR:-./library}:/library"
-      - "${TALEBOOK_AUDIOBOOKS_DIR:-./audiobooks}:/audiobooks"
     ports:
       - "8080:80"
       - "8443:443"

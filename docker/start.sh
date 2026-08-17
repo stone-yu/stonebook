@@ -27,7 +27,7 @@ fi
 mkdir -p \
   /data/settings /data/progress /data/themes /data/logo /data/ssl /data/calibre /data/log/nginx \
   /data/work/upload /data/work/convert /data/work/extract \
-  /imports /library /audiobooks \
+  /imports /library \
   /root/.npm /run/talebook /var/www/talebook/status
 
 if [ "$legacy_layout" = "0" ]; then

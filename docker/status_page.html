@@ -39,7 +39,7 @@ var STEP_NAMES = {
 
 var CODE_HINTS = {
   permission_denied: '检测到 /data 目录写入失败，请检查挂载卷的 PUID/PGID 与目录权限设置。',
-  legacy_storage_layout: '检测到旧版 /data/books 存储布局。新版不会自动迁移，请停服并按升级文档拆分到 /data、/imports、/library 和 /audiobooks。',
+  legacy_storage_layout: '检测到旧版 /data/books 存储布局。新版不会自动迁移，请停服并按升级文档拆分到 /data、/imports 和 /library，有声书资产请单独备份。',
   nginx_config_invalid: 'Nginx 配置校验失败，请检查是否覆盖了自定义证书或配置文件。',
   syncdb_failed: '数据库初始化失败，请检查 /data 与 /library 是否可写、磁盘空间是否充足。',
   migrate_failed: '数据库结构迁移失败，请检查 /data/calibre-webserver.db 是否可正常访问。',

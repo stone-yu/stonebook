@@ -22,14 +22,14 @@ else
   done
 fi
 if [ "$legacy_layout" = "1" ]; then
-  echo "检测到旧版 /data/books 存储布局；请按升级文档迁移到 /data、/imports、/library 和 /audiobooks。"
+  echo "检测到旧版 /data/books 存储布局；请按升级文档迁移到 /data、/imports 和 /library，有声书资产请单独备份。"
   exit 1
 fi
 
 mkdir -p \
   /data/settings /data/progress /data/themes /data/logo /data/ssl /data/calibre /data/log/nginx \
   /data/work/upload /data/work/convert /data/work/extract \
-  /imports /library /audiobooks \
+  /imports /library \
   /root/.npm /run/talebook
 
 if [ ! -s /data/calibre-webserver.db ]; then
@@ -54,7 +54,7 @@ touch "$permission_file"
 permission=$(cat "$permission_file")
 if [ "x$permission" != "x$PUID:$PGID" ]; then
   echo "updating persistent storage permission to $PUID:$PGID"
-  chown -R talebook:talebook /data /library /audiobooks
+  chown -R talebook:talebook /data /library
   echo "$PUID:$PGID" > "$permission_file"
 else
   chown -R talebook:talebook /data/settings || exit 1
@@ -87,7 +87,7 @@ check_atomic_write() {
   ' talebook-write-check "$directory"
 }
 
-for directory in /data /library /audiobooks; do
+for directory in /data /library; do
   if ! check_atomic_write "$directory"; then
     echo "目录权限异常，无法以 PUID/PGID 原子写入 $directory"
     exit 1

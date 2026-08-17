@@ -57,10 +57,6 @@ RUN mkdir -p /var/lib/apt/lists/partial && \
         pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/; \
     fi
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
-
 # 针对 ARM32 架构的特殊处理
 RUN if [ "$TARGETARCH" = "arm" ] && [ "$TARGETVARIANT" = "v7" ]; then \
     echo "Building for ARM32 (ARMv7) architecture"; \
@@ -146,6 +142,8 @@ ARG GIT_VERSION=""
 ARG TARGETARCH
 ARG TARGETVARIANT
 
+ENV TALEBOOK_DISABLE_AUDIOBOOKS=1
+
 LABEL Author="Rex <talebook@foxmail.com>"
 LABEL Thanks="oldiy <oldiy2018@gmail.com>"
 
@@ -163,7 +161,6 @@ RUN echo "Target architecture: $TARGETARCH$TARGETVARIANT" > /arch-info.txt
 # prepare dirs
 RUN mkdir -p /data/log/nginx/ && \
     mkdir -p /library  && \
-    mkdir -p /audiobooks  && \
     mkdir -p /data/work/extract  && \
     mkdir -p /data/work/upload  && \
     mkdir -p /imports  && \
@@ -176,7 +173,7 @@ RUN mkdir -p /data/log/nginx/ && \
     mkdir -p /data/ssl && \
     mkdir -p /var/www/talebook/ && \
     mkdir -p /var/www/talebook/status && \
-    chmod a+w -R /data /imports /library /audiobooks /var/www
+    chmod a+w -R /data /imports /library /var/www
 
 COPY server.py /var/www/talebook/
 COPY docker/ /var/www/talebook/docker/
@@ -211,7 +208,7 @@ RUN rm -f /etc/nginx/sites-enabled/default /var/www/html -rf && \
 
 EXPOSE 80 443
 
-VOLUME ["/data", "/imports", "/library", "/audiobooks"]
+VOLUME ["/data", "/imports", "/library"]
 
 CMD ["/var/www/talebook/docker/start.sh"]
 
@@ -300,7 +297,6 @@ WORKDIR /var/www/talebook
 # prepare dirs
 RUN mkdir -p /data/log/nginx/ && \
     mkdir -p /library  && \
-    mkdir -p /audiobooks  && \
     mkdir -p /data/work/extract  && \
     mkdir -p /data/work/upload  && \
     mkdir -p /imports  && \
@@ -312,7 +308,7 @@ RUN mkdir -p /data/log/nginx/ && \
     mkdir -p /data/logo && \
     mkdir -p /data/ssl && \
     mkdir -p /var/www/talebook/ && \
-    chmod a+w -R /data /imports /library /audiobooks /var/www
+    chmod a+w -R /data /imports /library /var/www
 
 COPY server.py /var/www/talebook/
 COPY docker/ /var/www/talebook/docker/
@@ -348,7 +344,7 @@ RUN rm -f /etc/nginx/sites-enabled/default /var/www/html -rf && \
 
 EXPOSE 80 443
 
-VOLUME ["/data", "/imports", "/library", "/audiobooks"]
+VOLUME ["/data", "/imports", "/library"]
 
 CMD ["/var/www/talebook/docker/start-dev.sh"]
 
