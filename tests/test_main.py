@@ -681,6 +681,8 @@ class TestBook(TestWithUserLogin):
         self.assertIn("talebook-reader-selection-cleared", page)
         self.assertIn("bindAnnotationTarget", page)
         self.assertIn("ta-note-", page)
+        self.assertIn("markClicked", page)
+        self.assertIn("editAnnotation", page)
 
     def test_read_prefers_epub_when_other_formats_exist(self):
         book = {

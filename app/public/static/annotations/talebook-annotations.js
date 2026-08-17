@@ -89,7 +89,7 @@ export class TalebookAnnotations {
         composer.querySelector('.ta-inline-close').addEventListener('click', () => this.closeThoughtComposer());
         this.annotationPeek.addEventListener('pointerenter', () => this.cancelAnnotationPeekHide());
         this.annotationPeek.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
-        this.annotationPeek.addEventListener('click', () => this.openAnnotation(this.peekItem));
+        this.annotationPeek.addEventListener('click', () => this.editAnnotation(this.peekItem));
     }
 
     bindSelectionToolbar() {
@@ -168,6 +168,10 @@ export class TalebookAnnotations {
             });
         });
         target.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
+        target.addEventListener('click', event => {
+            event.stopPropagation();
+            this.editAnnotation(item);
+        });
     }
 
     showAnnotationPeek(item, rect) {
@@ -199,6 +203,12 @@ export class TalebookAnnotations {
         card.classList.add('ta-card-active');
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         window.setTimeout(() => card.classList.remove('ta-card-active'), 1800);
+    }
+
+    editAnnotation(item) {
+        if (!item) return;
+        this.openAnnotation(item);
+        this.showEditor(item);
     }
 
     async handleSelectionAction(action) {

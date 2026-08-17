@@ -294,7 +294,7 @@ let intvl = null;
 let annotations = null;
 let txtAnnotationItems = [];
 
-useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260817-hover' }] });
+useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260817-click' }] });
 
 onMounted(async () => {
     mainStore.setNavbar(false);
@@ -304,7 +304,7 @@ onMounted(async () => {
             mainStore.login(rsp);
         }
     });
-    const module = await import('/static/annotations/talebook-annotations.js?v=20260817-hover');
+    const module = await import('/static/annotations/talebook-annotations.js?v=20260817-click');
     annotations = new module.TalebookAnnotations({
         bookId: bookid,
         format: 'txt',

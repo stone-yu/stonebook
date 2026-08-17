@@ -169,5 +169,26 @@ describe('TalebookAnnotations', () => {
 
         expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(true);
         expect(document.querySelector('[data-id="12"]')?.classList.contains('ta-card-active')).toBe(true);
+        const editor = document.querySelector('.ta-editor') as HTMLElement;
+        expect(editor.hidden).toBe(false);
+        expect((editor.querySelector('textarea') as HTMLTextAreaElement).value).toBe('我的想法');
+    });
+
+    it('opens the matching thought editor when its marked text is clicked', async () => {
+        const item = { id: 15, kind: 'note', quote: '可点击原文', content: '直接编辑', locator: {}, color: '#f6c85f' };
+        vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
+        const annotations = new TalebookAnnotations({ bookId: 7, format: 'pdf' });
+        await vi.waitFor(() => expect(document.querySelector('[data-id="15"]')).not.toBeNull());
+        const target = document.createElement('span');
+        document.body.append(target);
+        HTMLElement.prototype.scrollIntoView = vi.fn();
+
+        annotations.bindAnnotationTarget(target, item);
+        target.click();
+
+        const editor = document.querySelector('.ta-editor') as HTMLElement;
+        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(true);
+        expect(editor.hidden).toBe(false);
+        expect((editor.querySelector('textarea') as HTMLTextAreaElement).value).toBe('直接编辑');
     });
 });
