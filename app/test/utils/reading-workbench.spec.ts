@@ -23,6 +23,16 @@ describe('reading workbench phase one', () => {
         expect(discover).toContain("path: '/search'");
     });
 
+    it('submits discovery search from a standalone button', () => {
+        const discover = source('pages/discover.vue');
+        const fieldEnd = discover.indexOf('/>');
+        const submitButton = discover.indexOf('type="submit"');
+
+        expect(discover).toContain('@submit.prevent="searchBooks"');
+        expect(submitButton).toBeGreaterThan(fieldEnd);
+        expect(discover).not.toContain('v-field__append-inner');
+    });
+
     it('keeps low-frequency capabilities on the More page', () => {
         const more = source('pages/more.vue');
 
