@@ -21,7 +21,10 @@ const { pushMock, storeState } = vi.hoisted(() => ({
         theme: 'light',
         sys: {
             title: 'TaleBook',
-            allow: {},
+            books: 23,
+            tags: 7,
+            allow: { FEEDBACK: true },
+            sidebar_extra_html: '<img src="/logo/link.png">',
             friends: [],
             show_sidebar_sys: false,
             show_network_library: true,
@@ -65,6 +68,7 @@ describe('AppHeader.vue', () => {
     beforeEach(() => {
         pushMock.mockReset();
         storeState.sys.show_network_library = true;
+        storeState.user.is_login = false;
     });
 
     it('only wraps the site title text in the clickable/pointer area, not the whole title bar', () => {
@@ -109,18 +113,17 @@ describe('AppHeader.vue', () => {
         wrapper.unmount();
     });
 
-    it('places the category guide before the tag guide with distinct icons', () => {
+    it('keeps one tag entry with the correct tag count and hides sidebar extra HTML', () => {
         const wrapper = mountHeader();
         const links = wrapper.findAllComponents({ name: 'VListItem' });
-        const categoryGuide = links.find(item => item.props('to') === '/categories');
-        const tagGuide = links.find(item => item.props('to') === '/nav');
+        const tag = links.find(item => item.props('to') === '/tag');
 
-        expect(categoryGuide?.text()).toContain('navigation.libraryCategories');
-        expect(categoryGuide?.props('prependIcon')).toBe('mdi-widgets');
-        expect(tagGuide?.text()).toContain('navigation.browse');
-        expect(tagGuide?.props('prependIcon')).toBe('mdi-tag-multiple');
-        expect(links.indexOf(categoryGuide!)).toBeLessThan(links.indexOf(tagGuide!));
+        expect(links.some(item => item.props('to') === '/nav')).toBe(false);
+        expect(tag?.text()).toContain('navigation.tags');
+        expect(tag?.text()).toContain('7');
+        expect(wrapper.html()).not.toContain('/logo/link.png');
 
         wrapper.unmount();
     });
+
 });

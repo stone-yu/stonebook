@@ -27,7 +27,6 @@ test.describe('Navigation Sidebar', () => {
         // 3. Category Links
         const links = [
             { name: '分类导览', href: '/categories' },
-            { name: '标签导览', href: '/nav' },
             { name: '出版社', href: '/publisher' },
             { name: '作者', href: '/author' },
             { name: '标签', href: '/tag' },
@@ -38,11 +37,7 @@ test.describe('Navigation Sidebar', () => {
             await expect(page.locator('nav').getByRole('link', { name: link.name })).toBeVisible();
             await expect(page.locator('nav').getByRole('link', { name: link.name })).toHaveAttribute('href', link.href);
         }
-        const categoryGuidePrecedesTagGuide = await page.locator('nav a[href="/categories"]').evaluate((categoryGuide) => {
-            const tagGuide = document.querySelector('nav a[href="/nav"]');
-            return !!tagGuide && Boolean(categoryGuide.compareDocumentPosition(tagGuide) & Node.DOCUMENT_POSITION_FOLLOWING);
-        });
-        expect(categoryGuidePrecedesTagGuide).toBe(true);
+        await expect(page.locator('nav a[href="/nav"]')).toHaveCount(0);
 
         // 4. Secondary Links (Series, Rating, Hot, Recent)
         // These might be inside a list item or just links.
@@ -126,7 +121,6 @@ test.describe('Navigation Sidebar', () => {
             { name: '本地书库', url: '/library', expectedText: '本地书库' },
             { name: '网络书库', url: '/network', expectedText: '网络书库' },
             { name: '分类导览', url: '/categories', expectedText: '分类导览' },
-            { name: '标签导览', url: '/nav', expectedText: '标签导览' },
             { name: '出版社', url: '/publisher', expectedText: '出版社' },
             { name: '作者', url: '/author', expectedText: '作者' },
             { name: '标签', url: '/tag', expectedText: '标签' },

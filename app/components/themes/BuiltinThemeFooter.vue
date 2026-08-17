@@ -10,20 +10,6 @@
             class="press-content"
             v-html="footerText"
         />
-        <nav class="tb-theme-footer-links">
-            <a
-                href="https://github.com/talebook/talebook"
-                target="_blank"
-            >Github</a>
-            <a
-                href="https://hub.docker.com/r/talebook/talebook"
-                target="_blank"
-            >Docker</a>
-            <a
-                href="http://talebook.org"
-                target="_blank"
-            >Project</a>
-        </nav>
     </footer>
 </template>
 
@@ -51,17 +37,6 @@ const footerExtraHtml = computed(() => store.sys.footer_extra_html || '');
     margin-top: 32px;
     padding: 16px 12px 24px;
     text-align: center;
-}
-
-.tb-theme-footer-links {
-    display: inline-flex;
-    gap: 14px;
-    margin-top: 6px;
-}
-
-.tb-theme-footer a {
-    color: inherit;
-    text-decoration: none;
 }
 
 .tb-theme-footer-light-gray {

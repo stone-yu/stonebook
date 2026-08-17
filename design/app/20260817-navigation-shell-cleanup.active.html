@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>导航外壳精简方案</title>
+  <style>
+    body{max-width:920px;margin:40px auto;padding:0 24px;color:#263238;font:16px/1.7 system-ui,sans-serif;background:#f7f8f5}
+    main{background:#fff;padding:32px;border-radius:16px;box-shadow:0 8px 28px #26323812}
+    h1,h2{color:#355948} code{background:#edf3ef;padding:2px 6px;border-radius:4px} table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #dfe7e2;text-align:left} .meta{color:#66756d}
+  </style>
+</head>
+<body><main>
+  <h1>导航外壳精简方案</h1>
+  <p class="meta">创建日期：2026-08-17　所属模块：app　状态：ACTIVE</p>
+  <h2>原始诉求</h2>
+  <p>去除左侧重复且数量错误的“标签导览”，去掉侧栏二维码和页脚 Github、Docker、Project 固定链接，并将头像菜单的反馈地址切换到当前 fork。</p>
+  <h2>目标与决策</h2>
+  <table><tr><th>区域</th><th>处理</th></tr>
+    <tr><td>标签入口</td><td>保留 <code>/tag</code>，使用 <code>sys.tags</code>；仅从侧栏移除 <code>/nav</code>，不删除路由。</td></tr>
+    <tr><td>侧栏底部</td><td>停止渲染 <code>sidebar_extra_html</code>，已有配置继续保留但不再显示。</td></tr>
+    <tr><td>页脚</td><td>移除三项固定项目链接，保留管理员配置的页脚正文与额外 HTML。</td></tr>
+    <tr><td>反馈</td><td>头像菜单固定跳转 <code>https://github.com/stone-yu/talebook/issues</code>，不影响阅读器等其他可配置反馈入口。</td></tr>
+  </table>
+  <h2>兼容性</h2>
+  <p><code>/nav</code> 页面与已有书签仍可访问；书库数据、标签数据和 API 均不迁移。自定义主题组件不被强制修改，两个内置页眉和页脚实现保持一致。</p>
+  <h2>测试结果</h2>
+  <p>组件与静态结构测试覆盖唯一标签入口、正确数量来源、二维码隐藏、页脚链接移除及反馈地址。已执行前端定向测试、eslint、SPA 构建、方案校验和浏览器实际渲染检查，结果通过。</p>
+</main></body></html>

@@ -228,7 +228,7 @@
                             <v-list-item
                                 v-if="store.sys.allow.FEEDBACK"
                                 target="_blank"
-                                :href="store.sys.FEEDBACK_URL"
+                                href="https://github.com/stone-yu/talebook/issues"
                                 :title="$t('messages.feedback')"
                                 prepend-icon="mdi-message-alert"
                             />
@@ -427,15 +427,6 @@
                         </template>
                     </v-list-item>
                 </template>
-                <v-list-item
-                    v-if="store.sys.sidebar_extra_html"
-                    class="sidebar-extra-item"
-                >
-                    <div
-                        class="sidebar-extra-content press-content"
-                        v-html="store.sys.sidebar_extra_html"
-                    />
-                </v-list-item>
             </v-list>
         </v-navigation-drawer>
     </div>
@@ -515,7 +506,6 @@ const items = computed(() => {
             }]
             : []),
         { icon: 'mdi-widgets', href: '/categories', text: $t('navigation.libraryCategories') },
-        { icon: 'mdi-tag-multiple', href: '/nav', text: $t('navigation.browse'), count: store.sys.books },
         { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), count: store.sys.publishers },
         { icon: 'mdi-human-greeting', href: '/author', text: $t('navigation.authors'), count: store.sys.authors },
         { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), count: store.sys.tags },
@@ -658,23 +648,6 @@ function toggleTheme() {
 :deep(.v-navigation-drawer) .v-btn__content {
     font-size: 14px !important;
     font-weight: 500 !important;
-}
-
-/* 侧边栏额外内容居中 */
-:deep(.v-navigation-drawer) .sidebar-extra-item .v-list-item__content {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-:deep(.v-navigation-drawer) .sidebar-extra-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-}
-:deep(.v-navigation-drawer) .sidebar-extra-content img {
-    margin: 0 auto;
-    display: block;
 }
 
 /* 侧边栏图标和文字间距 */
