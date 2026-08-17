@@ -31,18 +31,10 @@ import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/stores/main';
 const store=useMainStore();const{t}=useI18n();store.setNavbar(true);useHead({title:()=>t('navigation.more')});
 const sections=computed(()=>[
-    {title:t('more.organize'),items:[
-        {href:'/categories',icon:'mdi-shape-outline',title:t('navigation.libraryCategories'),description:t('more.categoryDesc')},
-        {href:'/author',icon:'mdi-account-voice',title:t('navigation.authors'),description:t('counts.authors',{count:store.sys.authors||0})},
-        {href:'/publisher',icon:'mdi-domain',title:t('navigation.publishers'),description:t('counts.publishers',{count:store.sys.publishers||0})},
-        {href:'/tag',icon:'mdi-tag-outline',title:t('navigation.tags'),description:t('counts.tags',{count:store.sys.tags||0})},
-        {href:'/format',icon:'mdi-file-outline',title:t('navigation.formats'),description:t('counts.formats',{count:store.sys.formats||0})},
-    ]},
     {title:t('more.explore'),items:[
         {href:'/audios',icon:'mdi-book-music-outline',title:t('navigation.audiobooks'),description:t('more.audioDesc')},
         {href:'/hot',icon:'mdi-trending-up',title:t('navigation.hot'),description:t('more.hotDesc')},
         {href:'/recent',icon:'mdi-history',title:t('navigation.recent'),description:t('more.recentDesc')},
-        {href:'/series',icon:'mdi-library-shelves',title:t('navigation.series'),description:t('more.seriesDesc')},
     ]},
     {title:t('more.connections'),items:[
         {href:'/opds-readme',icon:'mdi-cellphone-link',title:t('messages.opdsIntroduction'),description:'OPDS'},

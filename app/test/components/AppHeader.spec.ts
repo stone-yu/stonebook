@@ -122,13 +122,13 @@ describe('AppHeader.vue', () => {
         wrapper.unmount();
     });
 
-    it('moves tag browsing under More and hides sidebar extra HTML', () => {
+    it('keeps metadata browsing out of More and hides sidebar extra HTML', () => {
         const wrapper = mountHeader();
         const links = wrapper.findAllComponents({ name: 'VListItem' });
         const tag = links.find(item => item.props('to') === '/tag');
 
         expect(links.some(item => item.props('to') === '/nav')).toBe(false);
-        expect(tag?.text()).toContain('navigation.tags');
+        expect(tag).toBeUndefined();
         expect(wrapper.html()).not.toContain('/logo/link.png');
 
         wrapper.unmount();

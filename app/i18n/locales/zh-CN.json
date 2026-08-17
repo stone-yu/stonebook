@@ -226,7 +226,7 @@
     "bookSources": "书源管理",
     "themes": "主题管理",
     "systemLogs": "系统日志",
-    "myShelf": "我的书架",
+    "myShelf": "书架",
     "libraryCategories": "分类导览",
     "audiobooks": "有声书",
     "readBooks": "已读书目",
@@ -565,7 +565,9 @@
     "localDescription": "浏览已经整理入库的全部藏书",
     "networkDescription": "通过已配置的书源发现和保存内容",
     "refineEyebrow": "快速缩小范围",
-    "refineTitle": "按你熟悉的方式浏览"
+    "refineTitle": "按你熟悉的方式浏览",
+    "back": "返回找书",
+    "ratingDescription": "按评分浏览"
   },
   "more": {
     "eyebrow": "全部能力",
@@ -584,7 +586,8 @@
     "authors": "{count} 位作者",
     "publishers": "{count} 家出版社",
     "tags": "{count} 个标签",
-    "formats": "{count} 种格式"
+    "formats": "{count} 种格式",
+    "series": "{count} 个系列"
   },
   "opdsPage": {
     "title": "OPDS 介绍",

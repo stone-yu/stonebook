@@ -14,7 +14,7 @@ describe('navigation shell cleanup', () => {
 
         expect(header).not.toContain("href: '/nav'");
         expect(header).not.toContain('sidebar_extra_html');
-        expect(header).toContain("href: '/tag'");
+        expect(header).not.toContain("href: '/tag'");
         expect(header).toContain("href: '/discover'");
     });
 
@@ -22,7 +22,7 @@ describe('navigation shell cleanup', () => {
         const header = source('components/themes/BuiltinThemeHeader.vue');
 
         expect(header).not.toContain("href: '/nav'");
-        expect(header).toContain("href: '/tag'");
+        expect(header).not.toContain("href: '/tag'");
         expect(header).toContain("href: '/discover'");
     });
 

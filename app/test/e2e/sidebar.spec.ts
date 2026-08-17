@@ -20,7 +20,7 @@ test.describe('Navigation Sidebar', () => {
 
         // 2. Primary reader tasks
         const links = [
-            { name: '我的书架', href: '/user/shelf' },
+            { name: '书架', href: '/user/shelf' },
             { name: '找书', href: '/discover' },
         ];
 
@@ -63,7 +63,7 @@ test.describe('Navigation Sidebar', () => {
     test('Can navigate via all sidebar links', async ({ page }) => {
     // Define all links to test
         const linksToTest = [
-            { name: '我的书架', url: '/user/shelf', expectedText: '我的书架' },
+            { name: '书架', url: '/user/shelf', expectedText: '书架' },
             { name: '找书', url: '/discover', expectedText: '今天想读什么' },
         ];
 

@@ -12,6 +12,7 @@
             class="reader-main"
         >
             <v-container fluid>
+                <DiscoverBackLink v-if="isDiscoverChild" />
                 <slot />
                 <template v-if="store.nav && themeRuntimeReady">
                     <ClientOnly>
@@ -68,7 +69,7 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue';
-import { useRouter, useHead } from 'nuxt/app';
+import { useRoute, useRouter, useHead } from 'nuxt/app';
 import { useThemeRuntime } from '@/composables/useThemeRuntime';
 import { useMainStore } from '@/stores/main';
 import { useDisplay } from 'vuetify';
@@ -77,7 +78,10 @@ import AudiobookPlayer from '@/components/AudiobookPlayer.vue';
 
 const store = useMainStore();
 const display = useDisplay();
+const route = useRoute();
 const router = useRouter();
+const discoverChildPaths = ['/search', '/library', '/network', '/categories', '/author', '/publisher', '/tag', '/format', '/series', '/rating'];
+const isDiscoverChild = computed(() => discoverChildPaths.some(path => route.path === path || route.path.startsWith(`${path}/`)));
 const {
     dynamicFooter,
     dynamicHeader,

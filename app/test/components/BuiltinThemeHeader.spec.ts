@@ -161,13 +161,13 @@ describe('BuiltinThemeHeader.vue navigation', () => {
         wrapper.unmount();
     });
 
-    it('keeps only the canonical tag navigation entry', () => {
+    it('keeps metadata browsing out of More', () => {
         const wrapper = mountHeader('light-gray');
         const links = wrapper.findAllComponents({ name: 'VListItem' });
         const tag = links.find(item => item.props('to') === '/tag');
 
         expect(links.some(item => item.props('to') === '/nav')).toBe(false);
-        expect(tag?.text()).toContain('navigation.tags');
+        expect(tag).toBeUndefined();
 
         wrapper.unmount();
     });

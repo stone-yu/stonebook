@@ -472,11 +472,6 @@ const items = computed(() => {
             icon: 'mdi-menu',
             text: t('navigation.more'),
             groups: [
-                { icon: 'mdi-widgets', href: '/categories', text: t('navigation.libraryCategories') },
-                { icon: 'mdi-human-greeting', href: '/author', text: t('navigation.authors') },
-                { icon: 'mdi-home-group', href: '/publisher', text: t('navigation.publishers') },
-                { icon: 'mdi-tag-outline', href: '/tag', text: t('navigation.tags') },
-                { icon: 'mdi-file-outline', href: '/format', text: t('navigation.formats') },
                 { icon: 'mdi-book-music-outline', href: '/audios', text: t('navigation.audiobooks') },
                 { icon: 'mdi-trending-up', href: '/hot', text: t('navigation.hot') },
                 { icon: 'mdi-history', href: '/recent', text: t('navigation.recent') },

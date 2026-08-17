@@ -1,0 +1,8 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>找书导航收敛方案</title><style>body{max-width:980px;margin:36px auto;padding:0 24px;background:#f4f7fb;color:#172238;font:16px/1.7 system-ui,sans-serif}main{background:#fff;border:1px solid #e8edf5;border-radius:24px;padding:36px;box-shadow:0 18px 50px #52627a12}h1,h2{color:#25375b}h2{margin-top:30px}.meta{color:#71809a}.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.flow div{padding:14px;border-radius:14px;background:linear-gradient(135deg,#eef3ff,#f8fbff)}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e7ebf2;text-align:left}@media(max-width:700px){main{padding:22px}.flow{grid-template-columns:1fr}}</style></head><body><main>
+<h1>找书导航收敛</h1><p class="meta">创建日期：2026-08-17　模块：app　状态：ACTIVE　来源：一期体验反馈</p>
+<h2>原始诉求</h2><p>找书进入搜索结果、本地书库、网络书库及元数据筛选页面后缺少返回入口；“我的书架”名称偏长；筛选入口同时出现在找书与更多，造成信息架构重复。</p>
+<h2>目标</h2><div class="flow"><div>找书<br>承接全部资源发现与筛选</div><div>书架<br>缩短一级导航名称</div><div>更多<br>仅保留工具与低频阅读功能</div></div>
+<h2>方案</h2><table><tr><th>区域</th><th>调整</th></tr><tr><td>找书子页面</td><td>统一显示固定返回“找书”的轻量按钮，避免依赖不稳定的浏览器历史。</td></tr><tr><td>找书入口</td><td>保留搜索、本地书库、网络书库，并集中分类、作者、出版社、标签、格式、系列和评分筛选。</td></tr><tr><td>更多</td><td>移除全部书籍筛选入口，仅保留有声书、热门、最近加入、OPDS 和 WebDAV。</td></tr><tr><td>一级导航</td><td>中文“我的书架”改为“书架”，英文同步改为 Shelf。</td></tr></table>
+<h2>数据与兼容性</h2><p>不新增接口和路由；返回入口固定指向 <code>/discover</code>。现有筛选页面地址保持不变，旧书签和外部链接继续可用。</p>
+<h2>测试结果</h2><p>29 个导航与工作台组件/契约测试通过；<code>npm run lint</code> 通过（0 errors，保留仓库已有 warnings）；<code>npm run build-spa</code> 构建成功。连接真实后端完成桌面浏览器验收：找书页展示七类筛选入口，本地书库显示并可点击“返回找书”，更多页不再出现筛选菜单；手机 390×844 视口验证搜索结果页返回入口及“书架”文案正常。</p>
+</main></body></html>

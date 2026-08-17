@@ -221,7 +221,7 @@
     "bookSources": "Book Sources",
     "themes": "Themes",
     "systemLogs": "System Logs",
-    "myShelf": "My Shelf",
+    "myShelf": "Shelf",
     "libraryCategories": "Category Guide",
     "audiobooks": "Audiobooks",
     "readBooks": "Read Books",
@@ -550,7 +550,9 @@
     "localDescription": "Browse every book already organized in your library",
     "networkDescription": "Discover and save books from configured sources",
     "refineEyebrow": "Narrow it down",
-    "refineTitle": "Browse in a familiar way"
+    "refineTitle": "Browse in a familiar way",
+    "back": "Back to Find Books",
+    "ratingDescription": "Browse by rating"
   },
   "more": {
     "eyebrow": "All capabilities",
@@ -569,7 +571,8 @@
     "authors": "{count} authors",
     "publishers": "{count} publishers",
     "tags": "{count} tags",
-    "formats": "{count} formats"
+    "formats": "{count} formats",
+    "series": "{count} series"
   },
   "opdsPage": {
     "title": "OPDS Guide",

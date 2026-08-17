@@ -36,9 +36,29 @@ describe('reading workbench phase one', () => {
     it('keeps low-frequency capabilities on the More page', () => {
         const more = source('pages/more.vue');
 
-        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/audios']) {
+        for (const path of ['/audios', '/hot', '/recent', '/opds-readme', '/webdav-readme']) {
             expect(more).toContain(`href:'${path}'`);
         }
+        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series']) {
+            expect(more).not.toContain(`href:'${path}'`);
+        }
+    });
+
+    it('keeps all book browsing filters under Find Books', () => {
+        const discover = source('pages/discover.vue');
+
+        for (const path of ['/categories', '/author', '/publisher', '/tag', '/format', '/series', '/rating']) {
+            expect(discover).toContain(`href: '${path}'`);
+        }
+    });
+
+    it('provides a stable Find Books return link on discovery child routes', () => {
+        const layout = source('layouts/default.vue');
+        const backLink = source('components/DiscoverBackLink.vue');
+
+        expect(layout).toContain('<DiscoverBackLink v-if="isDiscoverChild" />');
+        expect(layout).toContain("'/search', '/library', '/network', '/categories', '/author', '/publisher', '/tag', '/format', '/series', '/rating'");
+        expect(backLink).toContain('to="/discover"');
     });
 
     it('provides four mobile primary navigation tasks', () => {
