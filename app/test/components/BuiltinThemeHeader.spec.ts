@@ -161,6 +161,21 @@ describe('BuiltinThemeHeader.vue navigation', () => {
         wrapper.unmount();
     });
 
+    it('places the category guide before the tag guide with distinct icons', () => {
+        const wrapper = mountHeader('light-gray');
+        const links = wrapper.findAllComponents({ name: 'VListItem' });
+        const categoryGuide = links.find(item => item.props('to') === '/categories');
+        const tagGuide = links.find(item => item.props('to') === '/nav');
+
+        expect(categoryGuide?.text()).toContain('navigation.libraryCategories');
+        expect(categoryGuide?.find('.mdi-widgets').exists()).toBe(true);
+        expect(tagGuide?.text()).toContain('navigation.browse');
+        expect(tagGuide?.find('.mdi-tag-multiple').exists()).toBe(true);
+        expect(links.indexOf(categoryGuide!)).toBeLessThan(links.indexOf(tagGuide!));
+
+        wrapper.unmount();
+    });
+
     it('uses the menu icon and fully toggles the light-gray drawer', async () => {
         const wrapper = mountHeader('light-gray');
         const header = wrapper.findComponent(BuiltinThemeHeader).vm as unknown as {

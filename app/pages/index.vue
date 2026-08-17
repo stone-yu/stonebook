@@ -130,7 +130,7 @@ store.setNavbar(true);
 
 // 使用计算属性直接处理数据
 const navs = computed(() => [
-    { icon: 'mdi-widgets',        href:'/nav',       text: t('navigation.browse'),  subtitle: t('counts.books', { count: store.sys.books || 0 }) },
+    { icon: 'mdi-tag-multiple',   href:'/nav',       text: t('navigation.browse'),  subtitle: t('counts.books', { count: store.sys.books || 0 }) },
     { icon: 'mdi-human-greeting', href:'/author',    text: t('navigation.authors'), subtitle: t('counts.authors', { count: store.sys.authors || 0 }) },
     { icon: 'mdi-home-group',     href:'/publisher', text: t('navigation.publishers'), subtitle: t('counts.publishers', { count: store.sys.publishers || 0 }) },
     { icon: 'mdi-tag-heart',      href:'/tag',       text: t('navigation.tags'), subtitle: t('counts.tags', { count: store.sys.tags || 0 }) },

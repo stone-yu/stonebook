@@ -215,7 +215,7 @@
     "ratings": "评分",
     "admin": "管理",
     "settings": "系统设置",
-    "browse": "分类导览",
+    "browse": "标签导览",
     "users": "用户管理",
     "books": "图书管理",
     "audiobookJobs": "有声书任务",
@@ -227,7 +227,7 @@
     "themes": "主题管理",
     "systemLogs": "系统日志",
     "myShelf": "我的书架",
-    "libraryCategories": "书库分类",
+    "libraryCategories": "分类导览",
     "audiobooks": "有声书",
     "readBooks": "已读书目"
   },
@@ -368,7 +368,7 @@
     "sourceDeleted": "原书已删除"
   },
   "category": {
-    "libraryTitle": "书库分类",
+    "libraryTitle": "分类导览",
     "shelfTitle": "我的分类",
     "allBooks": "全部书籍",
     "uncategorized": "未分类",

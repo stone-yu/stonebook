@@ -210,7 +210,7 @@
     "ratings": "Ratings",
     "admin": "Admin",
     "settings": "System Settings",
-    "browse": "Categories",
+    "browse": "Tag Guide",
     "users": "User Management",
     "books": "Book Management",
     "audiobookJobs": "Audiobook Jobs",
@@ -222,7 +222,7 @@
     "themes": "Themes",
     "systemLogs": "System Logs",
     "myShelf": "My Shelf",
-    "libraryCategories": "Library Categories",
+    "libraryCategories": "Category Guide",
     "audiobooks": "Audiobooks",
     "readBooks": "Read Books"
   },
@@ -363,7 +363,7 @@
     "sourceDeleted": "Source book deleted"
   },
   "category": {
-    "libraryTitle": "Library Categories",
+    "libraryTitle": "Category Guide",
     "shelfTitle": "My Categories",
     "allBooks": "All Books",
     "uncategorized": "Uncategorized",

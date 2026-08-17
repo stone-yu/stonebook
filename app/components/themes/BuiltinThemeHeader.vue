@@ -363,10 +363,10 @@ const navItems = computed(() => {
         });
     }
     items.push(
-        { key: 'nav', icon: 'mdi-widgets', href: '/nav', text: t('navigation.browse'), count: store.sys.books },
+        { key: 'category-tree', icon: 'mdi-widgets', href: '/categories', text: t('navigation.libraryCategories') },
+        { key: 'nav', icon: 'mdi-tag-multiple', href: '/nav', text: t('navigation.browse'), count: store.sys.books },
         { key: 'publisher', icon: 'mdi-home-group', href: '/publisher', text: t('navigation.publishers'), count: store.sys.publishers },
         { key: 'author', icon: 'mdi-human-greeting', href: '/author', text: t('navigation.authors'), count: store.sys.authors },
-        { key: 'category-tree', icon: 'mdi-file-tree', href: '/categories', text: t('navigation.libraryCategories') },
         { key: 'tag', icon: 'mdi-tag-heart', href: '/tag', text: t('navigation.tags'), count: store.sys.tags },
         { key: 'format', icon: 'mdi-file', href: '/format', text: t('navigation.formats'), count: store.sys.formats },
         { key: 'series', icon: 'mdi-library-shelves', href: '/series', text: t('navigation.series'), count: store.sys.series },

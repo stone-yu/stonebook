@@ -514,8 +514,8 @@ const items = computed(() => {
                 count: readDoneCount.value,
             }]
             : []),
-        { icon: 'mdi-widgets', href: '/nav', text: $t('navigation.browse'), count: store.sys.books },
-        { icon: 'mdi-file-tree', href: '/categories', text: $t('navigation.libraryCategories') },
+        { icon: 'mdi-widgets', href: '/categories', text: $t('navigation.libraryCategories') },
+        { icon: 'mdi-tag-multiple', href: '/nav', text: $t('navigation.browse'), count: store.sys.books },
         { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), count: store.sys.publishers },
         { icon: 'mdi-human-greeting', href: '/author', text: $t('navigation.authors'), count: store.sys.authors },
         { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), count: store.sys.tags },

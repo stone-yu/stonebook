@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="分类浏览菜单重命名、图标区分与排序调整方案。" />
+  <link rel="icon" href="data:," />
+  <title>分类浏览菜单语义调整 · ACTIVE</title>
+  <style>body{max-width:900px;margin:auto;padding:24px;font:15px/1.7 system-ui;color:#24302b;background:#f4f6f5}header,section{margin-bottom:16px;padding:22px;border:1px solid #d8dfdb;border-radius:16px;background:#fff}h1,h2{margin-top:0}.status{color:#28714b;font-weight:700}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #d8dfdb;text-align:left}@media(max-width:640px){body{padding:12px}header,section{padding:16px}}</style>
+</head>
+<body>
+  <header><h1>分类浏览菜单语义调整</h1><p>创建日期 2026-08-17 · 所属模块 app · <span class="status">状态 ACTIVE</span> · 来源：用户反馈</p></header>
+  <section><h2>原始诉求</h2><p>交换“分类导览”和“书库分类”的位置；把书库分类改为分类导览并沿用相应图标；原分类导览按真实功能重新命名和更换图标。</p></section>
+  <section><h2>语义映射</h2><table><thead><tr><th>路径</th><th>实际功能</th><th>新名称</th><th>图标</th></tr></thead><tbody><tr><td>/categories</td><td>多级书库分类树及分类内书籍</td><td>分类导览</td><td>mdi-widgets</td></tr><tr><td>/nav</td><td>管理员预设的标签分组快捷入口</td><td>标签导览</td><td>mdi-tag-multiple</td></tr></tbody></table></section>
+  <section><h2>实现与边界</h2><p>桌面侧栏和内置主题导航统一排序；分类导览排在标签导览之前。同步中文、英文和分类页面标题，首页原 /nav 卡片也使用标签导览语义。路由与接口不变。</p></section>
+  <section><h2>测试结果</h2><ul><li><code>npx vitest run test/components/AppHeader.spec.ts test/components/BuiltinThemeHeader.spec.ts</code>：18 项通过。</li><li>相关组件、首页和测试 eslint：0 错误。</li><li>中文与英文 locale 均通过 JSON 解析。</li><li>真实后端桌面及 390px 移动视口验证通过：顺序、名称、链接和两个不同 SVG 图标均正确；分类页面标题为“分类导览”，控制台无错误。</li></ul></section>
+</body>
+</html>

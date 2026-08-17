@@ -108,4 +108,19 @@ describe('AppHeader.vue', () => {
 
         wrapper.unmount();
     });
+
+    it('places the category guide before the tag guide with distinct icons', () => {
+        const wrapper = mountHeader();
+        const links = wrapper.findAllComponents({ name: 'VListItem' });
+        const categoryGuide = links.find(item => item.props('to') === '/categories');
+        const tagGuide = links.find(item => item.props('to') === '/nav');
+
+        expect(categoryGuide?.text()).toContain('navigation.libraryCategories');
+        expect(categoryGuide?.props('prependIcon')).toBe('mdi-widgets');
+        expect(tagGuide?.text()).toContain('navigation.browse');
+        expect(tagGuide?.props('prependIcon')).toBe('mdi-tag-multiple');
+        expect(links.indexOf(categoryGuide!)).toBeLessThan(links.indexOf(tagGuide!));
+
+        wrapper.unmount();
+    });
 });
