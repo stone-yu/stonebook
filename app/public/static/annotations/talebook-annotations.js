@@ -9,6 +9,25 @@ function escapeHtml(value = '') {
     return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
+export function annotationSearchQueries(annotation) {
+    const quote = String(annotation?.quote || '').trim();
+    if (!quote) return [];
+    const normalized = quote.replace(/\s+/g, ' ');
+    const compact = quote.replace(/\s+/g, '');
+    const candidates = [quote, normalized];
+    if (compact !== normalized && /[\u3400-\u9fff]/.test(compact)) candidates.push(compact);
+    for (const text of [normalized, compact]) {
+        if (text.length > 80) {
+            candidates.push(text.slice(0, 80));
+            candidates.push(text.slice(Math.max(0, Math.floor((text.length - 80) / 2)), Math.floor((text.length - 80) / 2) + 80));
+            candidates.push(text.slice(-80));
+        }
+    }
+    return [...new Set(candidates.map(value => value.trim()).filter(value => (
+        /[\u3400-\u9fff]/.test(value) ? value.length >= 4 : value.length >= 8
+    )))];
+}
+
 export class TalebookAnnotations {
     constructor(options) {
         this.options = options;

@@ -18,7 +18,7 @@
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
     import { Reader } from "./candle-reader.es.js?v=v1.2.0"
-    import { TalebookAnnotations } from "../annotations/talebook-annotations.js?v=20260817"
+    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-cross-format"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
@@ -62,18 +62,42 @@
       }
       const locate = async annotation => {
         const instance = epubInstance()
-        if (!instance || !annotation.locator || !annotation.locator.cfi) return 'failed'
-        try {
-          await instance.rendition.display(annotation.locator.cfi)
-          if (annotation.quote) instance.rendition.annotations.highlight(annotation.locator.cfi, {}, null, '', { fill: annotation.color || '#f6c85f', 'fill-opacity': '0.35' })
-          return 'exact'
-        } catch (error) {
-          const views = instance.rendition.views()._views || []
-          for (const view of views) {
-            const elements = [...view.document.querySelectorAll('p,li,h1,h2,h3,h4')]
-            const target = elements.find(element => element.textContent.includes(annotation.quote || '__missing__'))
-            if (target) { target.classList.add('ta-locate-mark'); target.scrollIntoView({ block: 'center' }); return 'approximate' }
+        if (!instance || !instance.rendition) return 'failed'
+        const cfi = annotation.locator && annotation.locator.cfi
+        if (annotation.format === 'epub' && cfi) {
+          try {
+            await instance.rendition.display(cfi)
+            if (annotation.quote) instance.rendition.annotations.highlight(cfi, {}, null, '', { fill: annotation.color || '#f6c85f', 'fill-opacity': '0.35' })
+            return 'exact'
+          } catch (error) {
+            console.debug('EPUB CFI location failed, falling back to text search', error)
           }
+        }
+        const queries = annotationSearchQueries(annotation)
+        if (!queries.length || !instance.book || !instance.book.spine) return 'failed'
+        let best = null
+        for (const section of instance.book.spine.spineItems || []) {
+          try {
+            await section.load(instance.book.load.bind(instance.book))
+            for (let rank = 0; rank < queries.length; rank += 1) {
+              if (best && rank >= best.rank) break
+              const match = section.search(queries[rank])[0]
+              if (match) best = { cfi: match.cfi, rank }
+            }
+          } catch (error) {
+            console.debug('EPUB annotation text search skipped a section', error)
+          } finally {
+            section.unload()
+          }
+          if (best && best.rank === 0) break
+        }
+        if (!best) return 'failed'
+        try {
+          await instance.rendition.display(best.cfi)
+          instance.rendition.annotations.highlight(best.cfi, {}, null, '', { fill: annotation.color || '#f6c85f', 'fill-opacity': '0.35' })
+          return 'approximate'
+        } catch (error) {
+          console.debug('EPUB annotation fallback location failed', error)
           return 'failed'
         }
       }

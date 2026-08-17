@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PDF 转 EPUB 后批注跨格式定位修复方案。" />
+  <link rel="icon" href="data:," />
+  <title>批注跨格式定位 · ACTIVE</title>
+  <style>body{max-width:920px;margin:auto;padding:24px;font:15px/1.7 system-ui;color:#202c28;background:#f3f6f5}header,section{margin-bottom:16px;padding:22px;border:1px solid #d5dfda;border-radius:16px;background:#fff}h1,h2{margin-top:0}.status{color:#28714b;font-weight:700}code{padding:2px 5px;background:#edf2ef}@media(max-width:640px){body{padding:12px}header,section{padding:16px}}</style>
+</head>
+<body>
+  <header><h1>PDF 转 EPUB 后的批注跨格式定位</h1><p>创建日期 2026-08-17 · 所属模块 app · <span class="status">状态 ACTIVE</span> · 来源：用户实际反馈</p></header>
+  <section><h2>原始诉求</h2><p>书籍由 PDF 转换成 EPUB 后，已有批注仍应能够定位到对应原文。</p></section>
+  <section><h2>原因与边界</h2><p>PDF 定位器是页码与文本偏移，EPUB 定位器是 CFI，两者不能直接换算。已有批注同时保存了原文、前文和后文，因此可用文本锚点做非破坏性降级定位。转换可能改变段落和空白，无法保证像原生 EPUB CFI 一样精确。</p></section>
+  <section><h2>实现方案</h2><ul><li>原生 EPUB 批注优先使用已有 CFI，失败后也进入文本搜索。</li><li>跨格式批注按完整原文、空白规范化文本、中文紧凑文本及长文锚点依次匹配 EPUB spine。</li><li>找到后使用搜索结果产生的临时 CFI 打开章节并标记原文，返回“近似定位”。</li><li>不改写数据库中的原格式和定位器，确保继续用 PDF 阅读时仍可精确定位。</li></ul></section>
+  <section><h2>测试结果</h2><ul><li><code>npx vitest run test/utils/talebook-annotations.spec.ts</code>：6 项通过，覆盖跨格式候选、空白差异、长原文锚点和既有批注行为。</li><li><code>pytest -q tests/test_annotations.py tests/test_categories.py tests/test_local_development_profile.py</code>：36 项通过。</li><li>JavaScript 语法与相关 Vue eslint 通过；真实后端 EPUB 阅读页加载 2 个内容 iframe，批注入口正常且控制台无错误。</li><li>浏览器会话未登录，无法用用户私有批注完成端到端点击；跨格式搜索由组件测试和真实阅读器资源加载共同验证。</li></ul></section>
+</body>
+</html>

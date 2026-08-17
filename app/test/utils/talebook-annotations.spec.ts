@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TalebookAnnotations } from '../../public/static/annotations/talebook-annotations.js';
+import { annotationSearchQueries, TalebookAnnotations } from '../../public/static/annotations/talebook-annotations.js';
 
 const response = (body: object) => Promise.resolve({ json: () => Promise.resolve(body) });
 
@@ -10,6 +10,17 @@ afterEach(() => {
 });
 
 describe('TalebookAnnotations', () => {
+    it('builds stable fallback queries for annotations imported from another format', () => {
+        const quote = `${'这是 PDF 转换后带有 空白差异的原文。'.repeat(8)}结尾`;
+        const queries = annotationSearchQueries({ quote });
+
+        expect(queries[0]).toBe(quote);
+        expect(queries).toContain(quote.replace(/\s+/g, ''));
+        expect(queries.some(item => item.length === 80)).toBe(true);
+        expect(annotationSearchQueries({ quote: '短句' })).toEqual([]);
+        expect(annotationSearchQueries({ quote: '功颂德碑' })).toEqual(['功颂德碑']);
+    });
+
     it('loads the private book list and creates a selected-text highlight', async () => {
         const fetch = vi.spyOn(globalThis, 'fetch')
             .mockImplementationOnce(() => response({ err: 'ok', annotations: [] }) as never)
