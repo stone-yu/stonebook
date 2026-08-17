@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Talebook 阅读页批注只读悬浮预览与显式编辑方案。"><link rel="icon" href="data:,">
+  <title>批注先预览再编辑且不触发翻页 · ACTIVE</title>
+  <style>:root{--ink:#26332a;--muted:#657168;--line:#dce3dc;--accent:#496a56;--paper:#fbfaf6}*{box-sizing:border-box}body{margin:0;background:#f3f5f1;color:var(--ink);font:15px/1.65 system-ui,"PingFang SC",sans-serif}.page{width:min(900px,calc(100% - 28px));margin:28px auto}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 28px #26332a0d}.hero{padding:28px;margin-bottom:16px;border-top:5px solid var(--accent)}h1{margin:0 0 8px;font:750 clamp(27px,5vw,40px)/1.2 Georgia,"Songti SC",serif}h2{margin:0 0 12px;font-size:21px}p,li{color:var(--muted)}.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chip{padding:5px 10px;border-radius:999px;background:#edf3ee;color:#3f644b;font-size:12px;font-weight:700}.card{padding:23px;margin-bottom:16px}.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.step{padding:15px;border:1px solid var(--line);border-radius:13px;background:var(--paper)}.step b{display:block;margin-bottom:5px}code{padding:.15em .4em;border-radius:5px;background:#eef2ed}ul{margin:8px 0 0;padding-left:20px}.pending{color:#9a5c09;font-weight:700}@media(max-width:620px){.page{margin:14px auto}.hero,.card{padding:20px}.flow{grid-template-columns:1fr}}</style>
+</head>
+<body><main class="page">
+  <header class="hero"><h1>批注先预览再编辑且不触发翻页</h1><p>把“点击批注即编辑”改为更稳妥的只读预览，显式点击编辑后才出现输入框，并隔离阅读器翻页事件。</p><div class="meta"><span class="chip">状态：ACTIVE</span><span class="chip">创建日期：2026-08-17</span><span class="chip">所属模块：app</span><span class="chip">影响：EPUB / PDF 阅读器</span><span class="chip">需求来源：用户反馈</span></div></header>
+  <section class="card"><h2>1. 原始诉求</h2><p>“点击后虽然弹出了编辑想法内容，但是页面也随着点击事件切换到了下一页。鼠标悬浮后，弹出显示想法内容，不要盖住标注想法的原文；想法内容为只读状态，可以有个编辑按钮，点击后切换成编辑状态。”</p></section>
+  <section class="card"><h2>2. 目标与边界</h2><ul><li>悬浮或点击已有想法时展示完整的只读内容。</li><li>浮层优先位于标注原文上方，空间不足时放在下方，始终留出间距。</li><li>只有点击“编辑”才进入现有原位编辑器。</li><li>批注相关的 pointerdown、mousedown、mouseup、click 不得传播给翻页逻辑。</li><li>不改变批注 API、数据库结构和侧栏管理能力。</li></ul></section>
+  <section class="card"><h2>3. 交互与实现</h2><div class="flow"><div class="step"><b>悬浮标注</b><p>读取绑定批注并显示只读想法卡片。</p></div><div class="step"><b>查看想法</b><p>卡片避让原文，可滚动查看长内容。</p></div><div class="step"><b>点击编辑</b><p>关闭预览并在同一锚点打开编辑器。</p></div></div><p>共享批注 SDK 负责事件隔离与浮层状态，因此 EPUB 与 PDF 保持一致。EPUB 高亮回调也由直接编辑改为只读预览。</p></section>
+  <section class="card"><h2>4. 风险与兼容</h2><p>阻止默认点击行为仅作用于已绑定的批注标记与批注浮层，不影响正文其他区域的翻页。触屏设备没有 hover 时仍可点击标记查看，再点击编辑。静态资源版本号更新以避开旧缓存。</p></section>
+  <section class="card"><h2>5. 测试结果</h2><ul><li><code>npx vitest run test/utils/talebook-annotations.spec.ts</code>：9 个测试通过，覆盖只读预览、显式编辑与点击不冒泡。</li><li><code>npm run lint</code>：0 error；保留仓库已有的 192 条 warning。</li><li><code>npm run build-spa</code>：生成成功。</li><li>浏览器真实阅读页：书籍《西游记》与批注 SDK 正常加载；验收浏览器未登录，接口显示“请先登录”，未将其计作真实批注数据验收。</li><li>浏览器隔离渲染：复用生产 SDK/CSS，确认浮层与原文不重叠、只读正文可见，点击“编辑”后正确进入编辑态并带入原内容。</li><li><code>make check-design</code>：通过。</li></ul></section>
+</main></body></html>

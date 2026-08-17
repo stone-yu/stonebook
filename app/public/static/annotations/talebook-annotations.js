@@ -68,12 +68,12 @@ export class TalebookAnnotations {
         this.selectionToolbar.setAttribute('role', 'toolbar');
         this.selectionToolbar.setAttribute('aria-label', '选中文字操作');
         this.selectionToolbar.innerHTML = `<div class="ta-selection-actions">${SELECTION_ACTIONS.map(action => `<button class="ta-selection-action" data-selection-action="${action.id}"><span class="ta-action-icon" aria-hidden="true">${action.icon}</span><span class="ta-action-label">${action.label}</span></button>`).join('')}</div><section class="ta-inline-composer" aria-label="写想法" hidden><div class="ta-inline-head"><strong class="ta-inline-title">写想法</strong><button class="ta-inline-close" type="button" aria-label="关闭想法输入">×</button></div><blockquote class="ta-inline-quote"></blockquote><textarea maxlength="500" placeholder="记录一下此刻想法…"></textarea><div class="ta-inline-foot"><span class="ta-inline-count">0/500</span><button class="ta-inline-cancel" type="button">取消</button><button class="ta-inline-save" type="button" disabled>添加想法</button></div><div class="ta-inline-status" role="status"></div></section>`;
-        this.annotationPeek = document.createElement('button');
+        this.annotationPeek = document.createElement('section');
         this.annotationPeek.className = 'ta-annotation-peek';
         this.annotationPeek.hidden = true;
-        this.annotationPeek.type = 'button';
-        this.annotationPeek.setAttribute('aria-label', '查看想法');
-        this.annotationPeek.innerHTML = '<span aria-hidden="true">✦</span><span>想法</span>';
+        this.annotationPeek.setAttribute('role', 'dialog');
+        this.annotationPeek.setAttribute('aria-label', '想法内容');
+        this.annotationPeek.innerHTML = '<div class="ta-peek-head"><span><span aria-hidden="true">✦</span> 想法</span><button class="ta-peek-edit" type="button">编辑</button></div><p class="ta-peek-content"></p>';
         document.body.append(this.trigger, this.panel, this.selectionToolbar, this.annotationPeek);
         this.trigger.addEventListener('click', () => this.toggle(true));
         this.panel.querySelector('.ta-close').addEventListener('click', () => this.toggle(false));
@@ -91,7 +91,13 @@ export class TalebookAnnotations {
         composer.querySelector('.ta-inline-close').addEventListener('click', () => this.closeThoughtComposer());
         this.annotationPeek.addEventListener('pointerenter', () => this.cancelAnnotationPeekHide());
         this.annotationPeek.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
-        this.annotationPeek.addEventListener('click', () => this.editAnnotation(this.peekItem, this.peekRect));
+        this.annotationPeek.querySelector('.ta-peek-edit').addEventListener('click', event => {
+            this.consumeReaderEvent(event);
+            this.editAnnotation(this.peekItem, this.peekRect);
+        });
+        for (const type of ['pointerdown', 'mousedown', 'mouseup', 'click']) {
+            this.annotationPeek.addEventListener(type, event => this.consumeReaderEvent(event));
+        }
     }
 
     bindSelectionToolbar() {
@@ -163,10 +169,20 @@ export class TalebookAnnotations {
             this.showAnnotationPeek(item, this.annotationTargetRect(target, frame));
         });
         target.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
+        for (const type of ['pointerdown', 'mousedown', 'mouseup']) {
+            target.addEventListener(type, event => this.consumeReaderEvent(event));
+        }
         target.addEventListener('click', event => {
-            event.stopPropagation();
-            this.editAnnotation(item, this.annotationTargetRect(target, frame));
+            this.consumeReaderEvent(event);
+            this.showAnnotationPeek(item, this.annotationTargetRect(target, frame));
         });
+    }
+
+    consumeReaderEvent(event) {
+        if (!event) return;
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        event.stopImmediatePropagation?.();
     }
 
     annotationTargetRect(target, frame = null) {
@@ -181,14 +197,21 @@ export class TalebookAnnotations {
     }
 
     showAnnotationPeek(item, rect) {
-        if (!item || !rect) return;
+        if (!item) return;
+        rect = rect || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
         this.cancelAnnotationPeekHide();
         this.peekItem = item;
         this.peekRect = rect;
-        const left = Math.min(window.innerWidth - 54, Math.max(54, rect.left + rect.width / 2));
-        this.annotationPeek.style.left = `${left}px`;
-        this.annotationPeek.style.top = `${Math.max(10, rect.top - 8)}px`;
+        this.annotationPeek.querySelector('.ta-peek-content').textContent = item.content;
         this.annotationPeek.hidden = false;
+        const width = this.annotationPeek.offsetWidth || 300;
+        const height = this.annotationPeek.offsetHeight || 96;
+        const halfWidth = width / 2;
+        const left = Math.min(window.innerWidth - halfWidth - 10, Math.max(halfWidth + 10, rect.left + rect.width / 2));
+        const useBottom = rect.top < height + 18;
+        this.annotationPeek.dataset.placement = useBottom ? 'bottom' : 'top';
+        this.annotationPeek.style.left = `${left}px`;
+        this.annotationPeek.style.top = `${useBottom ? rect.top + rect.height + 10 : rect.top - 10}px`;
     }
 
     cancelAnnotationPeekHide() {

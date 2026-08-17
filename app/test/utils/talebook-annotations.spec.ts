@@ -149,7 +149,7 @@ describe('TalebookAnnotations', () => {
         expect(toolbar.hidden).toBe(false);
     });
 
-    it('shows a thought affordance on annotation hover and opens the inline editor', async () => {
+    it('shows thought content on hover and enters editing only from the edit button', async () => {
         const item = { id: 12, kind: 'note', quote: '有想法的原文', content: '我的想法', locator: {}, color: '#f6c85f' };
         vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
         const annotations = new TalebookAnnotations({ bookId: 7, format: 'txt' });
@@ -165,7 +165,9 @@ describe('TalebookAnnotations', () => {
         const peek = document.querySelector('.ta-annotation-peek') as HTMLButtonElement;
         expect(peek.hidden).toBe(false);
         expect(peek.textContent).toContain('想法');
-        peek.click();
+        expect(peek.textContent).toContain('我的想法');
+        expect((document.querySelector('.ta-inline-composer') as HTMLElement).hidden).toBe(true);
+        (peek.querySelector('.ta-peek-edit') as HTMLButtonElement).click();
 
         expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(false);
         const composer = document.querySelector('.ta-inline-composer') as HTMLElement;
@@ -174,20 +176,30 @@ describe('TalebookAnnotations', () => {
         expect((composer.querySelector('textarea') as HTMLTextAreaElement).value).toBe('我的想法');
     });
 
-    it('opens the matching thought editor when its marked text is clicked', async () => {
+    it('opens a read-only thought without bubbling page-turn events and edits on demand', async () => {
         const item = { id: 15, kind: 'note', quote: '可点击原文', content: '直接编辑', locator: {}, color: '#f6c85f' };
         vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
         const annotations = new TalebookAnnotations({ bookId: 7, format: 'pdf' });
         await vi.waitFor(() => expect(document.querySelector('[data-id="15"]')).not.toBeNull());
+        const page = document.createElement('div');
         const target = document.createElement('span');
-        document.body.append(target);
+        page.append(target);
+        document.body.append(page);
         HTMLElement.prototype.scrollIntoView = vi.fn();
+        const turnPage = vi.fn();
+        page.addEventListener('click', turnPage);
 
         annotations.bindAnnotationTarget(target, item);
         target.click();
 
+        expect(turnPage).not.toHaveBeenCalled();
+        const peek = document.querySelector('.ta-annotation-peek') as HTMLElement;
+        expect(peek.hidden).toBe(false);
+        expect(peek.textContent).toContain('直接编辑');
         const composer = document.querySelector('.ta-inline-composer') as HTMLElement;
         expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(false);
+        expect(composer.hidden).toBe(true);
+        (peek.querySelector('.ta-peek-edit') as HTMLButtonElement).click();
         expect(composer.hidden).toBe(false);
         const textarea = composer.querySelector('textarea') as HTMLTextAreaElement;
         expect(textarea.value).toBe('直接编辑');
