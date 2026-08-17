@@ -293,7 +293,7 @@ const tip = reactive({
 let intvl = null;
 let annotations = null;
 
-useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260815' }] });
+useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260817' }] });
 
 onMounted(async () => {
     mainStore.setNavbar(false);
@@ -303,7 +303,7 @@ onMounted(async () => {
             mainStore.login(rsp);
         }
     });
-    const module = await import('/static/annotations/talebook-annotations.js?v=20260815');
+    const module = await import('/static/annotations/talebook-annotations.js?v=20260817');
     annotations = new module.TalebookAnnotations({
         bookId: bookid,
         format: 'txt',

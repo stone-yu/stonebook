@@ -100,4 +100,21 @@ describe('TalebookAnnotations', () => {
         expect(JSON.parse(fetch.mock.calls[1][1]?.body as string)).toMatchObject({ kind: 'highlight', content: '', quote: '复制或划线' });
         expect(locate).toHaveBeenCalledWith({ id: 3 });
     });
+
+    it('trims malformed reader context before saving a thought', async () => {
+        const fetch = vi.spyOn(globalThis, 'fetch')
+            .mockImplementationOnce(() => response({ err: 'ok', annotations: [] }) as never)
+            .mockImplementationOnce(() => response({ err: 'ok', annotation: { id: 4 } }) as never)
+            .mockImplementationOnce(() => response({ err: 'ok', annotations: [] }) as never);
+        const annotations = new TalebookAnnotations({ bookId: 7, format: 'epub' });
+        annotations.selection = { quote: '原文', prefix: `开头${'前'.repeat(700)}`, suffix: `${'后'.repeat(700)}结尾`, locator: {} };
+
+        await annotations.persistSelection('note', '想法');
+
+        const body = JSON.parse(fetch.mock.calls[1][1]?.body as string);
+        expect(body.prefix).toHaveLength(500);
+        expect(body.prefix).not.toContain('开头');
+        expect(body.suffix).toHaveLength(500);
+        expect(body.suffix).not.toContain('结尾');
+    });
 });

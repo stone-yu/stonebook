@@ -177,7 +177,9 @@ export class TalebookAnnotations {
 
     async persistSelection(kind, content) {
         const source = this.selection;
-        const body = { client_id: `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, format: this.format, quote: source.quote || '', prefix: source.prefix || '', suffix: source.suffix || '', chapter: source.chapter || '', locator: source.locator || {}, content, color: this.color };
+        const prefix = String(source.prefix || '').slice(-500);
+        const suffix = String(source.suffix || '').slice(0, 500);
+        const body = { client_id: `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, format: this.format, quote: source.quote || '', prefix, suffix, chapter: source.chapter || '', locator: source.locator || {}, content, color: this.color };
         const data = await this.request(`/api/book/${this.bookId}/annotations`, { method: 'POST', body: JSON.stringify(body) });
         await this.load();
         return data.annotation;

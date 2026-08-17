@@ -67,6 +67,19 @@ def test_invalid_highlight_and_oversized_locator_are_rejected(session):
         upsert_annotation(session, 1, 101, payload(locator={"data": "x" * 5000}), {"title": "活着"})
 
 
+def test_oversized_context_is_safely_trimmed(session):
+    row = upsert_annotation(
+        session,
+        1,
+        101,
+        payload(prefix="前" * 700, suffix="后" * 700),
+        {"title": "活着"},
+    )
+
+    assert row.prefix == "前" * 500
+    assert row.suffix == "后" * 500
+
+
 def test_category_query_follows_current_shelf_categories(session):
     row = upsert_annotation(session, 1, 101, payload(), {"title": "活着", "authors": ["余华"]})
     root = ShelfCategory(reader_id=1, name="文学")

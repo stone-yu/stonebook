@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="修复阅读批注上下文长度溢出的内部方案。" />
+  <link rel="icon" href="data:," />
+  <title>批注上下文长度溢出修复 · ACTIVE</title>
+  <style>body{max-width:920px;margin:auto;padding:24px;font:15px/1.7 system-ui;color:#243128;background:#f4f7f4}header,section{margin-bottom:16px;padding:22px;border:1px solid #d6dfd8;border-radius:16px;background:#fff}h1,h2{margin-top:0}.status{color:#28714b;font-weight:700}code{background:#edf2ee;padding:2px 5px}@media(max-width:640px){body{padding:12px}header,section{padding:16px}}</style>
+</head>
+<body>
+  <header><h1>批注上下文长度溢出修复</h1><p>创建日期 2026-08-17 · 所属模块 app / webserver · <span class="status">状态 ACTIVE</span> · 来源：用户实际报错</p></header>
+  <section><h2>原始诉求</h2><p>选中文字添加想法时不应出现“前文长度不能超过500”的错误。</p></section>
+  <section><h2>原因与目标</h2><p>EPUB/PDF 的选区文本与页面文本空白不一致时，查找偏移返回 <code>-1</code>，旧逻辑错误截取了几乎整章作为前文。目标是修正偏移失败分支，并确保异常客户端数据也不会阻断批注保存。</p></section>
+  <section><h2>方案</h2><ul><li>阅读器找不到精确偏移时不生成上下文，仍保留原文和定位器。</li><li>前端 SDK 统一将前文保留末尾 500 字、后文保留开头 500 字。</li><li>后端对辅助上下文容错截断；原文、笔记和定位器仍按原有规则严格校验。</li><li>更新静态资源版本，确保浏览器加载修复脚本。</li></ul></section>
+  <section><h2>测试结果</h2><ul><li><code>pytest -q tests/test_annotations.py tests/test_categories.py tests/test_local_development_profile.py</code>：36 项通过。</li><li><code>npx vitest run test/utils/talebook-annotations.spec.ts</code>：5 项通过。</li><li>JavaScript 语法、Python lint、相关 Vue eslint、设计文档门禁与差异检查均通过。</li></ul></section>
+</body>
+</html>

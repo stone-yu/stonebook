@@ -25,6 +25,11 @@ def _text(value, limit, field):
     return value
 
 
+def _context_text(value, limit, from_end=False):
+    value = str(value or "").strip()
+    return value[-limit:] if from_end else value[:limit]
+
+
 def validate_payload(data):
     client_id = _text(data.get("client_id"), 64, "client_id")
     kind = str(data.get("kind", ""))
@@ -53,8 +58,8 @@ def validate_payload(data):
         "color": color,
         "quote": quote,
         "content": content,
-        "prefix": _text(data.get("prefix"), 500, "前文"),
-        "suffix": _text(data.get("suffix"), 500, "后文"),
+        "prefix": _context_text(data.get("prefix"), 500, from_end=True),
+        "suffix": _context_text(data.get("suffix"), 500),
         "chapter": _text(data.get("chapter"), 255, "章节"),
     }
 

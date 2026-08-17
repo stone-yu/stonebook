@@ -13,12 +13,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
   <link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap">
   <link rel="stylesheet" crossorigin href="style.css?v=v1.2.0">
-  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260815">
+  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817">
 
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
     import { Reader } from "./candle-reader.es.js?v=v1.2.0"
-    import { TalebookAnnotations } from "../annotations/talebook-annotations.js?v=20260815"
+    import { TalebookAnnotations } from "../annotations/talebook-annotations.js?v=20260817"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
@@ -43,8 +43,8 @@
         const offset = bodyText.indexOf(quote)
         return {
           quote,
-          prefix: bodyText.slice(Math.max(0, offset - 120), offset),
-          suffix: bodyText.slice(offset + quote.length, offset + quote.length + 120),
+          prefix: offset >= 0 ? bodyText.slice(Math.max(0, offset - 120), offset) : '',
+          suffix: offset >= 0 ? bodyText.slice(offset + quote.length, offset + quote.length + 120) : '',
           chapter: location.toc && (location.toc.label || location.toc.name) || '',
           locator: {
             cfi: String(location.range_cfi || location.cfi),
