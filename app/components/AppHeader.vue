@@ -429,6 +429,7 @@
                 </template>
             </v-list>
         </v-navigation-drawer>
+        <ReaderBottomNavigation />
     </div>
 </template>
 
@@ -452,7 +453,6 @@ const messages = computed(() => store.messages);
 
 const mobile_search = ref(null);
 const search_input = ref(null);
-const readDoneCount = ref(0);
 
 // 多语言相关
 const availableLocales = computed(() => {
@@ -464,82 +464,44 @@ const allLocales = computed(() => {
 });
 
 const items = computed(() => {
-    var home_links = [
-        // home
-        { icon: 'mdi-home', href: '/', text: $t('navigation.home') },
+    var primary_links = [
+        { icon: 'mdi-home', href: '/', text: t('navigation.home') },
+        { icon: 'mdi-bookshelf', href: '/user/shelf', text: t('navigation.myShelf') },
+        { icon: 'mdi-book-search-outline', href: '/discover', text: t('navigation.findBooks') },
+        {
+            icon: 'mdi-menu',
+            text: t('navigation.more'),
+            groups: [
+                { icon: 'mdi-widgets', href: '/categories', text: t('navigation.libraryCategories') },
+                { icon: 'mdi-human-greeting', href: '/author', text: t('navigation.authors') },
+                { icon: 'mdi-home-group', href: '/publisher', text: t('navigation.publishers') },
+                { icon: 'mdi-tag-outline', href: '/tag', text: t('navigation.tags') },
+                { icon: 'mdi-file-outline', href: '/format', text: t('navigation.formats') },
+                { icon: 'mdi-book-music-outline', href: '/audios', text: t('navigation.audiobooks') },
+                { icon: 'mdi-trending-up', href: '/hot', text: t('navigation.hot') },
+                { icon: 'mdi-history', href: '/recent', text: t('navigation.recent') },
+            ],
+        },
     ];
-    var library_links = [
-        { icon: 'mdi-book', href: '/library', text: $t('navigation.localLibrary') },
-        ...(store.sys.show_network_library !== false
-            ? [{ icon: 'mdi-cloud-search', href: '/network', text: $t('navigation.networkLibrary') }]
-            : []),
-        { icon: 'mdi-book-music', href: '/audios', text: $t('navigation.audiobooks'), badge: $t('audiobook.beta') },
-    ];
-    var shelf_links = store.user.is_login
-        ? [{ icon: 'mdi-bookshelf', href: '/user/shelf', text: $t('navigation.myShelf') }]
-        : [];
     var admin_links = [
         {
             icon: 'mdi-cog',
-            text: $t('navigation.admin'),
+            text: t('navigation.admin'),
             // expand: route.path.indexOf("/admin/") == 0, // V3 list group handles expand differently (via value/opened)
             groups: [
-                { icon: 'mdi-cog', href: '/admin/settings', text: $t('navigation.settings') },
-                { icon: 'mdi-human-greeting', href: '/admin/users', text: $t('navigation.users') },
-                { icon: 'mdi-library-shelves', href: '/admin/books', text: $t('navigation.books') },
-                { icon: 'mdi-playlist-music', href: '/audio-jobs', text: $t('navigation.audiobookJobs') },
-                { icon: 'mdi-import', href: '/admin/imports', text: $t('navigation.import') },
-                { icon: 'mdi-book-cog', href: '/admin/booksources', text: $t('navigation.bookSources') },
-                { icon: 'mdi-palette', href: '/admin/themes', text: $t('navigation.themes') },
-                { icon: 'mdi-text-box-outline', href: '/admin/logs', text: $t('navigation.systemLogs') },
+                { icon: 'mdi-cog', href: '/admin/settings', text: t('navigation.settings') },
+                { icon: 'mdi-human-greeting', href: '/admin/users', text: t('navigation.users') },
+                { icon: 'mdi-library-shelves', href: '/admin/books', text: t('navigation.books') },
+                { icon: 'mdi-playlist-music', href: '/audio-jobs', text: t('navigation.audiobookJobs') },
+                { icon: 'mdi-import', href: '/admin/imports', text: t('navigation.import') },
+                { icon: 'mdi-book-cog', href: '/admin/booksources', text: t('navigation.bookSources') },
+                { icon: 'mdi-palette', href: '/admin/themes', text: t('navigation.themes') },
+                { icon: 'mdi-text-box-outline', href: '/admin/logs', text: t('navigation.systemLogs') },
             ],
         },
     ];
-    var nav_links = [
-        { heading: $t('navigation.categories') },
-        ...(store.user.is_login
-            ? [{
-                icon: 'mdi-check-circle',
-                href: '/user/history?tab=finished',
-                text: $t('navigation.readBooks'),
-                count: readDoneCount.value,
-            }]
-            : []),
-        { icon: 'mdi-widgets', href: '/categories', text: $t('navigation.libraryCategories') },
-        { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), count: store.sys.publishers },
-        { icon: 'mdi-human-greeting', href: '/author', text: $t('navigation.authors'), count: store.sys.authors },
-        { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), count: store.sys.tags },
-        { icon: 'mdi-file', href: '/format', text: $t('navigation.formats'), count: store.sys.formats },
-        {
-            target: '',
-            links: [
-                { icon: 'mdi-library-shelves', href: '/series', text: $t('navigation.series'), count: store.sys.series },
-                { icon: 'mdi-star-half', href: '/rating', text: $t('navigation.ratings') },
-                { icon: 'mdi-trending-up', href: '/hot', text: $t('navigation.hot') },
-                { icon: 'mdi-history', href: '/recent', text: $t('navigation.recent') },
-            ],
-        },
-    ];
-    var friend_links = [
-        // links
-        { heading: $t('messages.friendshipLinks') },
-        { links: store.sys.friends, target: '_blank' },
-    ];
-    var sys_links = [
-        { heading: $t('messages.system') },
-        { icon: 'mdi-history', text: $t('messages.systemVersion'), href: '', count: store.sys.version },
-        { icon: 'mdi-human', text: $t('messages.userCount'), href: '', count: store.sys.users },
-        { icon: 'mdi-cellphone', text: $t('messages.opdsIntroduction'), href: '/opds-readme', count: 'OPDS', target: '_blank' },
-        { icon: 'mdi-cloud-sync', text: $t('messages.webdavIntroduction'), href: '/webdav-readme', count: 'WebDAV', target: '_blank' },
-    ];
-
-    return home_links
-        .concat(library_links)
-        .concat(shelf_links)
-        .concat(store.user.is_admin ? admin_links : [])
-        .concat(nav_links)
-        .concat(store.sys.friends.length > 0 ? friend_links : [])
-        .concat(store.sys.show_sidebar_sys !== false ? sys_links : []);
+    return primary_links
+        .concat(store.user.is_admin ? admin_links : []);
 });
 
 onMounted(() => {
@@ -547,14 +509,6 @@ onMounted(() => {
     sidebar.value = display.mdAndUp.value;
     store.bootstrap().then((rsp) => {
         err.value = rsp.err;
-        if (store.user.is_login) {
-            const { $backend } = useNuxtApp();
-            $backend('/read-done').then((rsp) => {
-                if (rsp.err === 'ok') {
-                    readDoneCount.value = rsp.total || 0;
-                }
-            }).catch(() => {});
-        }
     });
 });
 

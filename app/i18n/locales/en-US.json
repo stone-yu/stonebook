@@ -224,7 +224,9 @@
     "myShelf": "My Shelf",
     "libraryCategories": "Category Guide",
     "audiobooks": "Audiobooks",
-    "readBooks": "Read Books"
+    "readBooks": "Read Books",
+    "findBooks": "Find Books",
+    "more": "More"
   },
   "network": {
     "title": "Network Library",
@@ -516,6 +518,51 @@
   "index": {
     "newReleases": "New Releases",
     "browseByCategory": "Browse by Category"
+  },
+  "workbench": {
+    "eyebrow": "Personal reading desk",
+    "reader": "reader",
+    "greeting": { "night": "Good night, {name}", "morning": "Good morning, {name}", "afternoon": "Good afternoon, {name}", "evening": "Good evening, {name}" },
+    "summary": "You are reading {reading} books and have finished {done}.",
+    "guestSummary": "Find your next book and build a reading space of your own.",
+    "continueReading": "Continue reading",
+    "noCurrentBook": "No books in progress",
+    "inProgress": "Reading",
+    "continueAction": "View and continue",
+    "pickFirstBook": "Choose a book from the library to start tracking your reading.",
+    "goFindBook": "Find a book",
+    "readyToContinue": "Ready when you are",
+    "lastRead": "Last read: {date}",
+    "unknownAuthor": "Unknown author",
+    "yourReading": "Your reading",
+    "viewShelf": "View shelf",
+    "libraryUpdate": "Library updates",
+    "recentlyAdded": "Recently added",
+    "viewAll": "View all",
+    "metrics": { "reading": "In progress", "finished": "Finished", "monthFinished": "This month", "shelf": "On shelf" },
+    "units": { "books": "books" }
+  },
+  "discover": {
+    "eyebrow": "Search and discover",
+    "title": "What would you like to read?",
+    "subtitle": "Start with your own library or discover something new online.",
+    "placeholder": "Search title, author, ISBN, or tag",
+    "localDescription": "Browse every book already organized in your library",
+    "networkDescription": "Discover and save books from configured sources",
+    "refineEyebrow": "Narrow it down",
+    "refineTitle": "Browse in a familiar way"
+  },
+  "more": {
+    "eyebrow": "All capabilities",
+    "subtitle": "Less frequent tools live here so the home page can focus on reading.",
+    "organize": "Organize",
+    "explore": "Explore and read",
+    "connections": "Devices and connections",
+    "categoryDesc": "Organize books with nested categories",
+    "audioDesc": "Listen to and manage audiobooks",
+    "hotDesc": "See books that are popular now",
+    "recentDesc": "Browse by date added",
+    "seriesDesc": "Browse by book series"
   },
   "counts": {
     "books": "{count} books",

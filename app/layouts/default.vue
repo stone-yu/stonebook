@@ -7,7 +7,10 @@
                 <AppPress />
             </ClientOnly>
         </template>
-        <v-main v-show="themeRuntimeReady">
+        <v-main
+            v-show="themeRuntimeReady"
+            class="reader-main"
+        >
             <v-container fluid>
                 <slot />
                 <template v-if="store.nav && themeRuntimeReady">
@@ -92,3 +95,11 @@ onMounted(() => {
 
 watch(themeRuntimeReady, value => store.setLoading(!value), { immediate: true });
 </script>
+
+<style scoped>
+@media (max-width: 959px) {
+    .reader-main {
+        padding-bottom: 64px;
+    }
+}
+</style>

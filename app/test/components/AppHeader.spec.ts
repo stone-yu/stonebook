@@ -6,7 +6,7 @@ import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('vue-i18n', () => ({
+vi.mock('#i18n', () => ({
     useI18n: () => ({
         locale: { value: 'zh-CN' },
         locales: { value: [{ code: 'zh-CN', name: '简体中文' }] },
@@ -60,7 +60,13 @@ import AppHeader from '@/components/AppHeader.vue';
 function mountHeader() {
     return mount(
         { components: { AppHeader }, template: '<v-app><AppHeader /></v-app>' },
-        { global: { plugins: [vuetify] } },
+        {
+            global: {
+                plugins: [vuetify],
+                stubs: { ReaderBottomNavigation: true },
+                mocks: { $t: (key: string) => key },
+            },
+        },
     );
 }
 
@@ -96,31 +102,33 @@ describe('AppHeader.vue', () => {
         wrapper.unmount();
     });
 
-    it('shows the network library link by default', () => {
+    it('shows the primary find-books entry', () => {
         const wrapper = mountHeader();
 
-        expect(wrapper.text()).toContain('navigation.networkLibrary');
+        expect(wrapper.text()).toContain('navigation.findBooks');
+        const discover = wrapper.findAllComponents({ name: 'VListItem' })
+            .find(item => item.props('to') === '/discover');
+        expect(discover).toBeDefined();
 
         wrapper.unmount();
     });
 
-    it('hides the network library link when disabled', () => {
+    it('keeps the find-books entry when the network library is disabled', () => {
         storeState.sys.show_network_library = false;
         const wrapper = mountHeader();
 
-        expect(wrapper.text()).not.toContain('navigation.networkLibrary');
+        expect(wrapper.text()).toContain('navigation.findBooks');
 
         wrapper.unmount();
     });
 
-    it('keeps one tag entry with the correct tag count and hides sidebar extra HTML', () => {
+    it('moves tag browsing under More and hides sidebar extra HTML', () => {
         const wrapper = mountHeader();
         const links = wrapper.findAllComponents({ name: 'VListItem' });
         const tag = links.find(item => item.props('to') === '/tag');
 
         expect(links.some(item => item.props('to') === '/nav')).toBe(false);
         expect(tag?.text()).toContain('navigation.tags');
-        expect(tag?.text()).toContain('7');
         expect(wrapper.html()).not.toContain('/logo/link.png');
 
         wrapper.unmount();

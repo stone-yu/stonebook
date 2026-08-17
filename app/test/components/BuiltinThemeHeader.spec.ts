@@ -61,7 +61,7 @@ function mountHeader(variant: 'light-gray' | 'minimal' | 'graphite' | 'brass' | 
         data: () => ({ variant }),
         template: '<v-app><BuiltinThemeHeader :variant="variant" /></v-app>',
     }, {
-        global: { plugins: [vuetify] },
+        global: { plugins: [vuetify], stubs: { ReaderBottomNavigation: true } },
     });
 }
 
@@ -136,27 +136,27 @@ describe('BuiltinThemeHeader.vue navigation', () => {
         },
     );
 
-    it('hides My Shelf from signed-out users', () => {
+    it('keeps My Shelf as a primary entry for signed-out users', () => {
         const wrapper = mountHeader('minimal');
 
-        expect(wrapper.text()).not.toContain('navigation.myShelf');
+        expect(wrapper.text()).toContain('navigation.myShelf');
 
         wrapper.unmount();
     });
 
-    it('shows the network library link by default', () => {
+    it('shows the primary find-books entry', () => {
         const wrapper = mountHeader('minimal');
 
-        expect(wrapper.text()).toContain('navigation.networkLibrary');
+        expect(wrapper.text()).toContain('navigation.findBooks');
 
         wrapper.unmount();
     });
 
-    it('hides the network library link when disabled', () => {
+    it('keeps the find-books entry when the network library is disabled', () => {
         storeState.sys.show_network_library = false;
         const wrapper = mountHeader('minimal');
 
-        expect(wrapper.text()).not.toContain('navigation.networkLibrary');
+        expect(wrapper.text()).toContain('navigation.findBooks');
 
         wrapper.unmount();
     });

@@ -229,7 +229,9 @@
     "myShelf": "我的书架",
     "libraryCategories": "分类导览",
     "audiobooks": "有声书",
-    "readBooks": "已读书目"
+    "readBooks": "已读书目",
+    "findBooks": "找书",
+    "more": "更多"
   },
   "network": {
     "title": "网络书库",
@@ -531,6 +533,51 @@
   "index": {
     "newReleases": "新书推荐",
     "browseByCategory": "分类浏览"
+  },
+  "workbench": {
+    "eyebrow": "个人阅读工作台",
+    "reader": "读者",
+    "greeting": { "night": "夜深了，{name}", "morning": "早上好，{name}", "afternoon": "下午好，{name}", "evening": "晚上好，{name}" },
+    "summary": "正在读 {reading} 本，已经读完 {done} 本。",
+    "guestSummary": "找到下一本想读的书，建立属于自己的阅读空间。",
+    "continueReading": "继续阅读",
+    "noCurrentBook": "还没有在读书籍",
+    "inProgress": "在读",
+    "continueAction": "查看并继续",
+    "pickFirstBook": "从书库选择一本书，开始记录阅读进度。",
+    "goFindBook": "去找一本书",
+    "readyToContinue": "随时可以继续阅读",
+    "lastRead": "上次阅读：{date}",
+    "unknownAuthor": "作者未知",
+    "yourReading": "你的阅读",
+    "viewShelf": "查看书架",
+    "libraryUpdate": "书库动态",
+    "recentlyAdded": "最近加入",
+    "viewAll": "查看全部",
+    "metrics": { "reading": "正在阅读", "finished": "累计已读", "monthFinished": "本月读完", "shelf": "书架藏书" },
+    "units": { "books": "本" }
+  },
+  "discover": {
+    "eyebrow": "搜索与发现",
+    "title": "今天想读什么？",
+    "subtitle": "从自己的书库开始，也可以到网络书库寻找新内容。",
+    "placeholder": "搜索书名、作者、ISBN 或标签",
+    "localDescription": "浏览已经整理入库的全部藏书",
+    "networkDescription": "通过已配置的书源发现和保存内容",
+    "refineEyebrow": "快速缩小范围",
+    "refineTitle": "按你熟悉的方式浏览"
+  },
+  "more": {
+    "eyebrow": "全部能力",
+    "subtitle": "低频功能集中在这里，首页只保留最重要的阅读任务。",
+    "organize": "整理与分类",
+    "explore": "探索与阅读",
+    "connections": "设备与连接",
+    "categoryDesc": "按多级分类整理藏书",
+    "audioDesc": "收听和管理有声内容",
+    "hotDesc": "查看近期热门书籍",
+    "recentDesc": "按入库时间浏览",
+    "seriesDesc": "按丛书系列浏览"
   },
   "counts": {
     "books": "{count} 本书籍",

@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>个人阅读工作台一期方案</title><style>body{max-width:980px;margin:36px auto;padding:0 24px;background:#f4f7fb;color:#172238;font:16px/1.7 system-ui,sans-serif}main{background:#fff;border:1px solid #e8edf5;border-radius:24px;padding:36px;box-shadow:0 18px 50px #52627a12}h1,h2{color:#25375b}h2{margin-top:30px}.meta{color:#71809a}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.flow div{padding:14px;border-radius:14px;background:linear-gradient(135deg,#eef3ff,#f8fbff)}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e7ebf2;text-align:left}@media(max-width:700px){main{padding:22px}.flow{grid-template-columns:1fr 1fr}}</style></head><body><main>
+<h1>个人阅读工作台一期</h1><p class="meta">创建日期：2026-08-17　模块：app　状态：ACTIVE　来源：用户体验反馈</p>
+<h2>原始诉求</h2><p>整体页面入口和配色过于复杂。用户主要关注阅读情况、个人书架以及从书库搜索资源，希望参考简洁、柔和渐变的数据首页完成一期改造。</p>
+<h2>目标</h2><div class="flow"><div>首页<br>继续阅读与概览</div><div>我的书架<br>组织个人藏书</div><div>找书<br>统一搜索入口</div><div>更多<br>收纳低频能力</div></div>
+<h2>信息架构</h2><table><tr><th>层级</th><th>内容</th></tr><tr><td>一级导航</td><td>首页、我的书架、找书、更多；管理员额外显示管理入口。</td></tr><tr><td>更多</td><td>分类导览、作者、出版社、标签、文件格式、有声书、排行与系统连接。</td></tr><tr><td>找书</td><td>统一搜索框，本地书库和网络书库作为两个资源来源入口，提供常用元数据筛选捷径。</td></tr><tr><td>首页</td><td>登录用户显示继续阅读、在读/已读/本月完成、书架数量；所有用户显示最近加入。</td></tr></table>
+<h2>视觉方案</h2><p>使用“晨雾书房”方向：浅蓝灰页面底色、低饱和蓝紫/薄荷/暖橙渐变、20px 左右圆角、克制阴影。封面与阅读动作是视觉主角。深色模式使用主题色混合而非写死浅色；移动端以四项底部导航替代常驻侧栏。</p>
+<h2>数据与权限</h2><p>复用 <code>/api/index</code>、<code>/api/reading/stats</code> 和 <code>/api/shelf</code>。阅读统计与书架只在登录后请求；游客看到找书与最近加入。第一期不新增阅读时长、连续天数等尚无可靠数据口径的指标。</p>
+<h2>测试结果</h2><p>已通过 26 个导航与工作台组件/契约测试；<code>npm run lint</code> 通过（0 errors，保留仓库已有 warnings）；<code>npm run build-spa</code> 构建成功。连接本地真实后端完成浏览器验收：首页、找书页及移动端底部导航均可用，并验证桌面/手机布局和浅色/深色主题。游客首页使用真实书库数据；登录态数据卡片由现有接口及自动化测试覆盖。</p>
+</main></body></html>

@@ -15,7 +15,7 @@ describe('navigation shell cleanup', () => {
         expect(header).not.toContain("href: '/nav'");
         expect(header).not.toContain('sidebar_extra_html');
         expect(header).toContain("href: '/tag'");
-        expect(header).toContain('count: store.sys.tags');
+        expect(header).toContain("href: '/discover'");
     });
 
     it('removes the duplicate tag guide from built-in theme headers', () => {
@@ -23,7 +23,7 @@ describe('navigation shell cleanup', () => {
 
         expect(header).not.toContain("href: '/nav'");
         expect(header).toContain("href: '/tag'");
-        expect(header).toContain('count: store.sys.tags');
+        expect(header).toContain("href: '/discover'");
     });
 
     it('removes fixed project links from both footer implementations', () => {
