@@ -66,7 +66,7 @@ export default defineNuxtConfig({
                 },
             ],
             link: [
-                { rel: 'shortcut icon', type: 'image/x-icon', href: '/logo/favicon.ico' }
+                { rel: 'icon', type: 'image/svg+xml', href: '/logo/bookshelf.svg' }
             ]
         }
     },

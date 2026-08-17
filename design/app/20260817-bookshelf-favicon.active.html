@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Talebook 浏览器页签图标改为书架图标的内部实现方案。">
+  <link rel="icon" href="data:,">
+  <title>统一站点与“我的书架”图标 · ACTIVE</title>
+  <style>
+    :root{color-scheme:light;--ink:#19324a;--muted:#607386;--line:#d8e2ec;--brand:#1976d2;--soft:#edf6ff}*{box-sizing:border-box}body{margin:0;background:#f5f8fb;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}.page{width:min(900px,calc(100% - 28px));margin:28px auto}.hero,.card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 28px rgba(25,50,74,.06)}.hero{padding:28px;margin-bottom:16px;border-top:5px solid var(--brand)}h1{margin:0 0 8px;font-size:clamp(28px,5vw,42px);line-height:1.2}h2{margin:0 0 12px;font-size:21px}.sub,p,li{color:var(--muted)}.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chip{padding:5px 10px;border-radius:999px;background:var(--soft);color:#155a9c;font-size:12px;font-weight:700}.card{padding:24px;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.item{padding:15px;border:1px solid var(--line);border-radius:13px}.item strong{display:block;color:var(--ink);margin-bottom:5px}code{padding:.15em .4em;border-radius:5px;background:#eef2f6}ul{margin:8px 0 0;padding-left:20px}.status{color:#9a5c09;font-weight:700}@media(max-width:620px){.page{margin:14px auto}.hero,.card{padding:20px}.grid{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <h1>统一站点与“我的书架”图标</h1>
+    <p class="sub">让浏览器页签中的 Talebook 标识直接复用“我的书架”菜单的书架图形，减少站点标识与产品导航之间的认知差异。</p>
+    <div class="meta"><span class="chip">状态：ACTIVE</span><span class="chip">创建日期：2026-08-17</span><span class="chip">所属模块：app</span><span class="chip">需求来源：用户反馈</span></div>
+  </header>
+  <section class="card"><h2>1. 原始诉求</h2><p>“网站状态栏图标改一下，改成当前我的书架菜单的图标样式吧。”</p></section>
+  <section class="card"><h2>2. 目标与边界</h2><div class="grid"><div class="item"><strong>目标</strong><ul><li>浏览器页签使用书架图标。</li><li>图形路径与菜单中的 <code>mdi-bookshelf</code> 完全一致。</li><li>使用矢量资源，保证高分屏与缩放清晰。</li></ul></div><div class="item"><strong>非目标</strong><ul><li>不修改菜单图标、主题配色或站点标题。</li><li>不更换阅读器内书籍封面图标。</li><li>不引入远程资源或新增运行时依赖。</li></ul></div></div></section>
+  <section class="card"><h2>3. 现状与实现方案</h2><p>当前页签引用旧的 <code>/logo/favicon.ico</code>，而“我的书架”使用本地注册的 <code>mdi-bookshelf</code>。新增仓库自有 SVG，以 Material Design Icons 的同一条路径绘制，并把 Nuxt head 中的 favicon 链接切换到该资源。主色采用应用现有的 <code>#1976d2</code>。</p></section>
+  <section class="card"><h2>4. 兼容性与风险</h2><p>现代浏览器支持 SVG favicon。资源使用绝对站内路径并随静态产物发布；旧 ICO 文件保留，避免影响仍直接引用它的历史阅读器或 WebDAV 页面。主要风险是浏览器缓存旧图标，可通过硬刷新或重新打开页签更新。</p></section>
+  <section class="card"><h2>5. 测试结果</h2><p class="status">验证通过。</p><ul><li><code>npx vitest run test/utils/favicon.spec.ts</code>：1 个测试通过。</li><li><code>npm run lint</code>：0 error；保留仓库已有的 192 条 warning。</li><li><code>npm run build-spa</code>：静态产物生成成功，<code>bookshelf.svg</code> 已进入输出目录。</li><li>浏览器实际验证：页面 head 正确声明 SVG favicon；资源返回 200，图形路径、视口与主题色均符合方案。</li><li><code>make check-design</code>：通过。</li></ul></section>
+</main>
+</body>
+</html>
