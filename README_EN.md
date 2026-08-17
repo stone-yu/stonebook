@@ -1,8 +1,8 @@
 
-[![GitHub License](https://img.shields.io/github/license/talebook/talebook?style=flat-square)](https://github.com/talebook/talebook/blob/master/LICENSE)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/w/talebook/talebook?logo=github&amp;style=flat-square&amp;label=commits)]()
-[![Tests](https://github.com/talebook/talebook/actions/workflows/ci.yml/badge.svg)](https://github.com/talebook/talebook/actions/workflows/ci.yml)
-[![Docker Build](https://github.com/talebook/talebook/actions/workflows/build.yml/badge.svg)](https://github.com/talebook/talebook/actions/workflows/build.yml)
+[![GitHub License](https://img.shields.io/github/license/stone-yu/stonebook?style=flat-square)](https://github.com/stone-yu/stonebook/blob/master/LICENSE)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/w/stone-yu/stonebook?logo=github&amp;style=flat-square&amp;label=commits)]()
+[![Tests](https://github.com/stone-yu/stonebook/actions/workflows/ci.yml/badge.svg)](https://github.com/stone-yu/stonebook/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/stone-yu/stonebook/actions/workflows/build.yml/badge.svg)](https://github.com/stone-yu/stonebook/actions/workflows/build.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/talebook/talebook.svg)](https://hub.docker.com/r/talebook/talebook)
 
 

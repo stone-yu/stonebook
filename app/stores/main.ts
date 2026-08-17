@@ -69,7 +69,8 @@ export const useMainStore = defineStore('main', () => {
       }
       if (typeof data.sys.header === 'string') {
         data.sys.header = data.sys.header
-          .replace('https://github.com/talebook/talebook', 'https://github.com/stone-yu/talebook')
+          .replace('https://github.com/talebook/talebook', 'https://github.com/stone-yu/stonebook')
+          .replace('https://github.com/stone-yu/talebook', 'https://github.com/stone-yu/stonebook')
           .replace('给 talebook 点击一个Star', '给 StoneBook 点击一个Star')
       }
       sys.value = data.sys

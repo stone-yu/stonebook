@@ -227,7 +227,7 @@
                             <v-list-item
                                 v-if="store.sys.allow.FEEDBACK"
                                 target="_blank"
-                                href="https://github.com/stone-yu/talebook/issues"
+                                href="https://github.com/stone-yu/stonebook/issues"
                                 :title="$t('messages.feedback')"
                                 prepend-icon="mdi-message-alert"
                             />

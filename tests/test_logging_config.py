@@ -13,6 +13,14 @@ def test_legacy_default_brand_is_normalized_without_touching_custom_titles():
     assert "StoneBook" in normalize_header_brand("给 talebook 点击一个Star")
 
 
+def test_legacy_repository_urls_are_normalized():
+    upstream = normalize_header_brand("https://github.com/talebook/talebook/issues")
+    old_fork = normalize_header_brand("https://github.com/stone-yu/talebook/issues")
+
+    assert upstream == "https://github.com/stone-yu/stonebook/issues"
+    assert old_fork == "https://github.com/stone-yu/stonebook/issues"
+
+
 def test_resolve_log_file_uses_data_directory_for_local_profile(tmp_path):
     settings_path = tmp_path / "data" / "settings"
     resolved = resolve_log_file({"settings_path": str(settings_path)}, SimpleNamespace(log_file_prefix=None))

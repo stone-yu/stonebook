@@ -39,7 +39,7 @@ describe('navigation shell cleanup', () => {
 
     it('uses the fork issue tracker for avatar feedback', () => {
         expect(source('components/AppHeader.vue'))
-            .toContain('href="https://github.com/stone-yu/talebook/issues"');
+            .toContain('href="https://github.com/stone-yu/stonebook/issues"');
     });
 
     it('uses a restrained account outline for the top user entry', () => {

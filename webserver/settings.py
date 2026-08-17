@@ -167,7 +167,7 @@ settings = {
     'WEBDAV_SYNC_FOLDER' : False,
     'WEBDAV_SYNC_FOLDER_NAME' : 'reader',
     'FEEDBACK_URL' : 'https://github.com/talebook/talebook/issues',
-    'HEADER': '欢迎访问！如果你喜欢此项目，请前往 Github <a target="_blank" href="https://github.com/stone-yu/talebook"> 给 StoneBook 点击一个Star！</a>',
+    'HEADER': '欢迎访问！如果你喜欢此项目，请前往 Github <a target="_blank" href="https://github.com/stone-yu/stonebook"> 给 StoneBook 点击一个Star！</a>',
     'FOOTER': '本站基于Calibre构建，感谢开源界的力量。所有资源搜集于互联网，如有侵权请邮件联系。',
     'FOOTER_EXTRA_HTML': '',
     'SIDEBAR_EXTRA_HTML': '<img class="ma-auto footer-logo" style="max-width: 130px; height: auto;" src="/logo/link.png">',

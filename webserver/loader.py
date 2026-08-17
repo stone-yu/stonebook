@@ -19,8 +19,10 @@ def normalize_site_title(value):
 def normalize_header_brand(value):
     if not isinstance(value, str):
         return value
-    return value.replace("https://github.com/talebook/talebook", "https://github.com/stone-yu/talebook").replace(
-        "给 talebook 点击一个Star", "给 StoneBook 点击一个Star"
+    return (
+        value.replace("https://github.com/talebook/talebook", "https://github.com/stone-yu/stonebook")
+        .replace("https://github.com/stone-yu/talebook", "https://github.com/stone-yu/stonebook")
+        .replace("给 talebook 点击一个Star", "给 StoneBook 点击一个Star")
     )
 
 

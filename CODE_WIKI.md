@@ -1553,7 +1553,7 @@ export CALIBRE_CONFIG_DIRECTORY=/data/calibre
 
 ```bash
 cd /var/www/
-git clone https://github.com/talebook/talebook.git
+git clone https://github.com/stone-yu/stonebook.git
 cd talebook
 ```
 
