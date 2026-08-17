@@ -28,7 +28,7 @@ See https://github.com/adobe-type-tools/cmap-resources
     <title>PDF.js viewer</title>
 
     <link rel="stylesheet" href="viewer.css">
-    <link rel="stylesheet" href="../../annotations/talebook-annotations.css?v=20260817">
+    <link rel="stylesheet" href="../../annotations/talebook-annotations.css?v=20260817-hover">
 
 <!-- This snippet is used in production (included from viewer.html) -->
 <link rel="resource" type="application/l10n" href="locale/locale.properties">
@@ -431,7 +431,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     <input type="file" id="fileInput" class="hidden">
     <script type="module">
-      import { TalebookAnnotations } from '../../annotations/talebook-annotations.js?v=20260817';
+      import { TalebookAnnotations } from '../../annotations/talebook-annotations.js?v=20260817-hover';
 
       const file = new URLSearchParams(location.search).get('file') || '';
       const match = file.match(/\/api\/book\/(\d+)/);
@@ -454,6 +454,22 @@ See https://github.com/adobe-type-tools/cmap-resources
             locator: { page: Number(page.dataset.pageNumber), offset: Math.max(0, offset) },
           };
         };
+        let annotationSdk = null;
+        let annotationItems = [];
+        const annotationTarget = annotation => {
+          const page = document.querySelector(`.page[data-page-number="${Number(annotation.locator?.page || 1)}"]`);
+          if (!page || !annotation.quote) return null;
+          const nodes = [...page.querySelectorAll('.textLayer span')];
+          return nodes.find(node => node.textContent.includes(annotation.quote)) ||
+            nodes.find(node => annotation.quote.includes(node.textContent.trim()) && node.textContent.trim().length > 6) || null;
+        };
+        const renderAnnotationTargets = () => {
+          if (!annotationSdk) return;
+          annotationItems.filter(item => item.kind === 'note' && item.content && item.quote).forEach(item => {
+            const target = annotationTarget(item);
+            if (target) annotationSdk.bindAnnotationTarget(target, item);
+          });
+        };
         const locate = async annotation => {
           const pageNumber = Number(annotation.locator?.page || 1);
           window.PDFViewerApplication.page = pageNumber;
@@ -467,16 +483,25 @@ See https://github.com/adobe-type-tools/cmap-resources
             nodes.find(node => annotation.quote.includes(node.textContent.trim()) && node.textContent.trim().length > 6);
           if (!target) return 'failed';
           target.classList.add('ta-locate-mark');
+          if (annotation.kind === 'note' && annotation.content) annotationSdk?.bindAnnotationTarget(target, annotation);
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return target.textContent.includes(annotation.quote) ? 'exact' : 'approximate';
         };
-        new TalebookAnnotations({
+        annotationSdk = new TalebookAnnotations({
           bookId,
           format: 'pdf',
           getSelection: selected,
           getLocation: () => ({ chapter: `第 ${currentPage()} 页`, locator: { page: currentPage() } }),
           locate,
+          onAnnotations: items => {
+            annotationItems = items;
+            window.setTimeout(renderAnnotationTargets, 0);
+          },
         });
+        document.addEventListener('webviewerloaded', () => {
+          window.PDFViewerApplication?.eventBus?.on('pagerendered', renderAnnotationTargets);
+        });
+        window.setTimeout(() => window.PDFViewerApplication?.eventBus?.on('pagerendered', renderAnnotationTargets), 1000);
       }
     </script>
   </body>

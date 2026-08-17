@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="阅读器选区操作条关闭与想法悬停入口实施方案。">
+  <link rel="icon" href="data:,">
+  <title>批注选区关闭与悬停入口 · ACTIVE</title>
+  <style>body{max-width:960px;margin:auto;padding:24px;font:15px/1.7 system-ui;color:#26322b;background:#f4f6f3}header,section{margin-bottom:16px;padding:20px 24px;border:1px solid #d9dfda;border-radius:14px;background:#fff}h1,h2{margin-top:0}.status{color:#28714b;font-weight:700}code{background:#edf1ed;padding:2px 5px}@media(max-width:640px){body{padding:12px}header,section{padding:16px}}</style>
+</head>
+<body>
+  <header><h1>批注选区关闭与悬停入口</h1><p>创建日期 2026-08-17 · 模块 app · <span class="status">状态 ACTIVE</span> · 来源：用户反馈</p></header>
+  <section><h2>原始诉求</h2><ol><li>点击正文导致文字选区消失后，选区操作条必须同步消失。</li><li>已经记录想法的原文，鼠标悬停时显示查看想法图标。</li></ol></section>
+  <section><h2>交互与实现</h2><ul><li>监听主文档及 EPUB 内容文档的选区变化；选区折叠时关闭操作条，但正在编辑想法时不打断输入。</li><li>批注 SDK 提供统一的原文目标绑定能力。想法原文保持轻量底色，鼠标悬停后在原文附近显示浮动图标。</li><li>点击图标打开批注侧栏、滚动并强调对应想法卡片；移出原文和图标后延迟关闭，避免鼠标移动过程闪烁。</li><li>PDF、TXT 和 EPUB 阅读器分别把可定位的原文节点绑定到统一 SDK；无法定位的历史批注仍可从侧栏访问。</li></ul></section>
+  <section><h2>测试结果</h2><ul><li><code>npx vitest run test/utils/talebook-annotations.spec.ts</code>：8 项通过，新增覆盖选区折叠、输入保护、悬停图标和批注卡片打开。</li><li>本地 Calibre Python 运行 <code>tests/test_main.py</code> 的阅读器模板用例：2 项通过。</li><li><code>node --check public/static/annotations/talebook-annotations.js</code> 通过。</li><li><code>make lint-py-fix</code>、<code>make lint-py</code> 通过；<code>npm run lint</code> 为 0 错误，保留仓库既有 192 条格式警告。</li><li><code>npm run build-spa</code> 通过。</li><li>真实本地 EPUB 阅读页验证：书籍正文、批注入口和批注侧栏正常渲染；游客态正确提示登录。已有私人想法的真实悬停数据受游客登录状态限制，由 SDK 自动化测试覆盖。</li></ul></section>
+</body>
+</html>

@@ -292,8 +292,9 @@ const tip = reactive({
 
 let intvl = null;
 let annotations = null;
+let txtAnnotationItems = [];
 
-useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260817' }] });
+useHead({ link: [{ rel: 'stylesheet', href: '/static/annotations/talebook-annotations.css?v=20260817-hover' }] });
 
 onMounted(async () => {
     mainStore.setNavbar(false);
@@ -303,13 +304,17 @@ onMounted(async () => {
             mainStore.login(rsp);
         }
     });
-    const module = await import('/static/annotations/talebook-annotations.js?v=20260817');
+    const module = await import('/static/annotations/talebook-annotations.js?v=20260817-hover');
     annotations = new module.TalebookAnnotations({
         bookId: bookid,
         format: 'txt',
         getSelection: txtSelection,
         getLocation: txtLocation,
         locate: locateTxtAnnotation,
+        onAnnotations: items => {
+            txtAnnotationItems = items;
+            nextTick(renderTxtAnnotationTargets);
+        },
         request: async (path, options) => {
             const rsp = await $backend(path.replace(/^\/api/, ''), options);
             if (rsp.err !== 'ok') throw new Error(rsp.msg || t('messages.error'));
@@ -371,6 +376,17 @@ const init = () => {
         }).finally(() => {
             loading.value = false;
         });
+};
+
+const renderTxtAnnotationTargets = () => {
+    const root = document.querySelector('.novel-content');
+    if (!root || !annotations) return;
+    const candidates = [...root.querySelectorAll('p,li,blockquote,div')]
+        .sort((left, right) => left.textContent.length - right.textContent.length);
+    txtAnnotationItems.filter(item => item.kind === 'note' && item.content && item.quote).forEach(item => {
+        const target = candidates.find(node => node.textContent.includes(item.quote));
+        if (target) annotations.bindAnnotationTarget(target, item);
+    });
 };
 
 const openPreferredReader = async () => {
@@ -461,6 +477,7 @@ const getNovelContent = (i) => {
                 return;
             }
             novelContent.value = `<h3>${title}</h3><br>${res.content}`;
+            nextTick(renderTxtAnnotationTargets);
         }).finally(() => {
             loading.value = false;
             if (process.client) {

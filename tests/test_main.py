@@ -674,6 +674,14 @@ class TestBook(TestWithUserLogin):
             self.assertEqual(rsp.code, 200)
             self.assertNotIn("waitReady", rsp.body.decode("utf-8"))
 
+    def test_reader_includes_annotation_selection_and_hover_hooks(self):
+        rsp = self.fetch("/read/%s" % BID_EPUB)
+        self.assertEqual(rsp.code, 200)
+        page = rsp.body.decode("utf-8")
+        self.assertIn("talebook-reader-selection-cleared", page)
+        self.assertIn("bindAnnotationTarget", page)
+        self.assertIn("ta-note-", page)
+
     def test_read_prefers_epub_when_other_formats_exist(self):
         book = {
             "id": BID_EPUB,

@@ -13,12 +13,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
   <link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap">
   <link rel="stylesheet" crossorigin href="style.css?v=v1.2.0">
-  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817">
+  <link rel="stylesheet" href="../annotations/talebook-annotations.css?v=20260817-hover">
 
   <script src="js/epub-v0.3.88.js"></script>
   <script  type="module">
     import { Reader } from "./candle-reader.es.js?v=v1.2.0"
-    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-cross-format"
+    import { TalebookAnnotations, annotationSearchQueries } from "../annotations/talebook-annotations.js?v=20260817-hover"
 
     function startReader() {
       document.getElementById('converting').style.display = 'none'
@@ -101,20 +101,47 @@
           return 'failed'
         }
       }
-      new TalebookAnnotations({
+      let annotationItems = []
+      let annotationSdk = null
+      const bindContentAnnotations = () => {
+        const instance = epubInstance()
+        if (!instance || !annotationSdk) return
+        ;(instance.rendition.getContents() || []).forEach(contents => {
+          const frame = contents.document && contents.document.defaultView && contents.document.defaultView.frameElement
+          annotationItems.filter(item => item.kind === 'note' && item.content).forEach(item => {
+            contents.document.querySelectorAll(`.ta-note-${item.id}`).forEach(target => annotationSdk.bindAnnotationTarget(target, item, frame))
+          })
+          if (!contents.document.documentElement.dataset.taSelectionBound) {
+            contents.document.documentElement.dataset.taSelectionBound = '1'
+            contents.document.addEventListener('selectionchange', () => {
+              const selection = contents.document.getSelection()
+              if (!selection || selection.isCollapsed) window.dispatchEvent(new CustomEvent('talebook-reader-selection-cleared'))
+            })
+          }
+        })
+      }
+      annotationSdk = new TalebookAnnotations({
         bookId: {{book.id}},
         format: 'epub',
         getSelection: frameSelection,
         getLocation: currentLocation,
         locate,
         onAnnotations: items => {
+          annotationItems = items
           const instance = epubInstance()
           if (!instance || !instance.rendition) return
-          items.filter(item => item.kind === 'highlight' && item.quote && item.locator && item.locator.cfi).forEach(item => {
-            try { instance.rendition.annotations.highlight(item.locator.cfi, {}, null, '', { fill: item.color, 'fill-opacity': '0.35' }) } catch (error) { console.debug(error) }
+          items.filter(item => item.quote && item.locator && item.locator.cfi).forEach(item => {
+            const isThought = item.kind === 'note' && item.content
+            if (!isThought && item.kind !== 'highlight') return
+            try {
+              instance.rendition.annotations.highlight(item.locator.cfi, { annotationId: item.id }, () => annotationSdk.openAnnotation(item), isThought ? `ta-note-${item.id}` : '', { fill: item.color, 'fill-opacity': isThought ? '0.22' : '0.35' })
+            } catch (error) { console.debug(error) }
           })
+          window.setTimeout(bindContentAnnotations, 0)
         },
       })
+      const instance = epubInstance()
+      if (instance && instance.rendition) instance.rendition.on('rendered', () => window.setTimeout(bindContentAnnotations, 0))
     }
 
     {% if is_ready %}

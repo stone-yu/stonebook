@@ -128,4 +128,46 @@ describe('TalebookAnnotations', () => {
         expect(body.suffix).toHaveLength(500);
         expect(body.suffix).not.toContain('结尾');
     });
+
+    it('dismisses the selection toolbar when the selection collapses but keeps an open thought editor', async () => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [] }) as never);
+        let selected = { quote: '仍然选中', locator: {} };
+        const annotations = new TalebookAnnotations({ bookId: 7, format: 'txt', getSelection: () => selected });
+        await annotations.captureSelection({ left: 40, top: 100, width: 80 });
+        const toolbar = document.querySelector('.ta-selection-toolbar') as HTMLElement;
+
+        selected = null as never;
+        document.dispatchEvent(new Event('selectionchange'));
+        await vi.waitFor(() => expect(toolbar.hidden).toBe(true));
+
+        selected = { quote: '输入中的原文', locator: {} };
+        await annotations.captureSelection({ left: 40, top: 100, width: 80 });
+        annotations.showThoughtComposer();
+        selected = null as never;
+        document.dispatchEvent(new Event('selectionchange'));
+        await new Promise(resolve => setTimeout(resolve, 10));
+        expect(toolbar.hidden).toBe(false);
+    });
+
+    it('shows a thought affordance on annotation hover and opens the matching card', async () => {
+        const item = { id: 12, kind: 'note', quote: '有想法的原文', content: '我的想法', locator: {}, color: '#f6c85f' };
+        vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ err: 'ok', annotations: [item] }) as never);
+        const annotations = new TalebookAnnotations({ bookId: 7, format: 'txt' });
+        await vi.waitFor(() => expect(document.querySelector('[data-id="12"]')).not.toBeNull());
+        const target = document.createElement('span');
+        target.textContent = item.quote;
+        target.getBoundingClientRect = () => ({ left: 80, top: 160, width: 120, height: 24, right: 200, bottom: 184, x: 80, y: 160, toJSON: () => ({}) });
+        document.body.append(target);
+        HTMLElement.prototype.scrollIntoView = vi.fn();
+
+        annotations.bindAnnotationTarget(target, item);
+        target.dispatchEvent(new Event('pointerenter'));
+        const peek = document.querySelector('.ta-annotation-peek') as HTMLButtonElement;
+        expect(peek.hidden).toBe(false);
+        expect(peek.textContent).toContain('想法');
+        peek.click();
+
+        expect(document.querySelector('.ta-panel')?.classList.contains('ta-open')).toBe(true);
+        expect(document.querySelector('[data-id="12"]')?.classList.contains('ta-card-active')).toBe(true);
+    });
 });

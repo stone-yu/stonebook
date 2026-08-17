@@ -37,6 +37,8 @@ export class TalebookAnnotations {
         this.selection = null;
         this.selectionRect = null;
         this.color = COLORS[0];
+        this.annotationTargets = new WeakMap();
+        this.hoverHideTimer = null;
         this.mount();
         this.bindSelectionToolbar();
         this.load().then(() => this.openTarget());
@@ -64,7 +66,13 @@ export class TalebookAnnotations {
         this.selectionToolbar.setAttribute('role', 'toolbar');
         this.selectionToolbar.setAttribute('aria-label', '选中文字操作');
         this.selectionToolbar.innerHTML = `<div class="ta-selection-actions">${SELECTION_ACTIONS.map(action => `<button class="ta-selection-action" data-selection-action="${action.id}"><span class="ta-action-icon" aria-hidden="true">${action.icon}</span><span class="ta-action-label">${action.label}</span></button>`).join('')}</div><section class="ta-inline-composer" aria-label="写想法" hidden><div class="ta-inline-head"><strong class="ta-inline-title">写想法</strong><button class="ta-inline-close" type="button" aria-label="关闭想法输入">×</button></div><blockquote class="ta-inline-quote"></blockquote><textarea maxlength="500" placeholder="记录一下此刻想法…"></textarea><div class="ta-inline-foot"><span class="ta-inline-count">0/500</span><button class="ta-inline-cancel" type="button">取消</button><button class="ta-inline-save" type="button" disabled>添加想法</button></div><div class="ta-inline-status" role="status"></div></section>`;
-        document.body.append(this.trigger, this.panel, this.selectionToolbar);
+        this.annotationPeek = document.createElement('button');
+        this.annotationPeek.className = 'ta-annotation-peek';
+        this.annotationPeek.hidden = true;
+        this.annotationPeek.type = 'button';
+        this.annotationPeek.setAttribute('aria-label', '查看想法');
+        this.annotationPeek.innerHTML = '<span aria-hidden="true">✦</span><span>想法</span>';
+        document.body.append(this.trigger, this.panel, this.selectionToolbar, this.annotationPeek);
         this.trigger.addEventListener('click', () => this.toggle(true));
         this.panel.querySelector('.ta-close').addEventListener('click', () => this.toggle(false));
         this.panel.querySelector('[data-action="selection"]').addEventListener('click', () => this.start('highlight'));
@@ -79,6 +87,9 @@ export class TalebookAnnotations {
         composer.querySelector('.ta-inline-save').addEventListener('click', () => this.saveThought());
         composer.querySelector('.ta-inline-cancel').addEventListener('click', () => this.closeThoughtComposer());
         composer.querySelector('.ta-inline-close').addEventListener('click', () => this.closeThoughtComposer());
+        this.annotationPeek.addEventListener('pointerenter', () => this.cancelAnnotationPeekHide());
+        this.annotationPeek.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
+        this.annotationPeek.addEventListener('click', () => this.openAnnotation(this.peekItem));
     }
 
     bindSelectionToolbar() {
@@ -87,12 +98,29 @@ export class TalebookAnnotations {
             window.setTimeout(() => this.captureSelection(), 0);
         });
         window.addEventListener('talebook-reader-selection', event => this.captureSelection(event.detail));
+        window.addEventListener('talebook-reader-selection-cleared', () => {
+            if (!this.isThoughtComposerOpen()) this.hideSelectionToolbar();
+        });
+        document.addEventListener('selectionchange', () => {
+            window.setTimeout(() => this.dismissToolbarForCollapsedSelection(), 0);
+        });
         document.addEventListener('mousedown', event => {
             if (!this.selectionToolbar.contains(event.target)) this.hideSelectionToolbar();
         });
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') this.hideSelectionToolbar();
         });
+    }
+
+    isThoughtComposerOpen() {
+        const composer = this.selectionToolbar.querySelector('.ta-inline-composer');
+        return Boolean(composer && !composer.hidden);
+    }
+
+    async dismissToolbarForCollapsedSelection() {
+        if (this.selectionToolbar.hidden || this.isThoughtComposerOpen()) return;
+        const selection = this.options.getSelection ? await this.options.getSelection() : null;
+        if (!selection?.quote) this.hideSelectionToolbar();
     }
 
     async captureSelection(position = null) {
@@ -122,6 +150,55 @@ export class TalebookAnnotations {
     hideSelectionToolbar() {
         this.selectionToolbar.hidden = true;
         this.closeThoughtComposer();
+    }
+
+    bindAnnotationTarget(target, item, frame = null) {
+        if (!target || !item?.content || this.annotationTargets.get(target) === item.id) return;
+        this.annotationTargets.set(target, item.id);
+        target.classList.add('ta-annotation-target');
+        target.dataset.taAnnotationId = String(item.id);
+        target.addEventListener('pointerenter', () => {
+            const rect = target.getBoundingClientRect();
+            const frameRect = frame?.getBoundingClientRect ? frame.getBoundingClientRect() : null;
+            this.showAnnotationPeek(item, {
+                left: rect.left + (frameRect?.left || 0),
+                top: rect.top + (frameRect?.top || 0),
+                width: rect.width,
+                height: rect.height,
+            });
+        });
+        target.addEventListener('pointerleave', () => this.hideAnnotationPeekSoon());
+    }
+
+    showAnnotationPeek(item, rect) {
+        if (!item || !rect) return;
+        this.cancelAnnotationPeekHide();
+        this.peekItem = item;
+        const left = Math.min(window.innerWidth - 54, Math.max(54, rect.left + rect.width / 2));
+        this.annotationPeek.style.left = `${left}px`;
+        this.annotationPeek.style.top = `${Math.max(10, rect.top - 8)}px`;
+        this.annotationPeek.hidden = false;
+    }
+
+    cancelAnnotationPeekHide() {
+        if (this.hoverHideTimer) window.clearTimeout(this.hoverHideTimer);
+        this.hoverHideTimer = null;
+    }
+
+    hideAnnotationPeekSoon() {
+        this.cancelAnnotationPeekHide();
+        this.hoverHideTimer = window.setTimeout(() => { this.annotationPeek.hidden = true; }, 140);
+    }
+
+    openAnnotation(item) {
+        if (!item) return;
+        this.annotationPeek.hidden = true;
+        this.toggle(true);
+        const card = this.panel.querySelector(`[data-id="${item.id}"]`);
+        if (!card) return;
+        card.classList.add('ta-card-active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.setTimeout(() => card.classList.remove('ta-card-active'), 1800);
     }
 
     async handleSelectionAction(action) {
