@@ -13,6 +13,7 @@ from webserver.services.categories import (
     create_category,
     delete_empty_category,
     merge_categories,
+    serialize_category,
     unassign_book,
     update_category,
 )
@@ -75,7 +76,7 @@ class LibraryCategoryAdmin(BaseHandler):
         try:
             if action == "create":
                 node = create_category(self.session, LibraryCategory, data.get("name"), data.get("parent_id"))
-                return {"err": "ok", "category": node.to_dict()}
+                return {"err": "ok", "category": serialize_category(node)}
             if action == "update":
                 changes = {}
                 if "name" in data:
@@ -83,7 +84,7 @@ class LibraryCategoryAdmin(BaseHandler):
                 if "parent_id" in data:
                     changes["parent_id"] = data["parent_id"]
                 node = update_category(self.session, LibraryCategory, int(data["category_id"]), **changes)
-                return {"err": "ok", "category": node.to_dict()}
+                return {"err": "ok", "category": serialize_category(node)}
             if action == "merge":
                 merge_categories(self.session, LibraryCategory, int(data["source_id"]), int(data["target_id"]))
                 return {"err": "ok"}
@@ -117,7 +118,7 @@ class ShelfCategoryTree(BaseHandler):
         try:
             if action == "create":
                 node = create_category(self.session, ShelfCategory, data.get("name"), data.get("parent_id"), reader_id)
-                return {"err": "ok", "category": node.to_dict()}
+                return {"err": "ok", "category": serialize_category(node)}
             if action == "update":
                 changes = {}
                 if "name" in data:
@@ -125,7 +126,7 @@ class ShelfCategoryTree(BaseHandler):
                 if "parent_id" in data:
                     changes["parent_id"] = data["parent_id"]
                 node = update_category(self.session, ShelfCategory, int(data["category_id"]), reader_id=reader_id, **changes)
-                return {"err": "ok", "category": node.to_dict()}
+                return {"err": "ok", "category": serialize_category(node)}
             if action == "merge":
                 merge_categories(
                     self.session,

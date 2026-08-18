@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="修复分类新增和移动成功后响应 500" />
+  <link rel="icon" href="data:," />
+  <title>修复分类写入成功后响应 500 · ACTIVE</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #253149; background: #f5f7fb; }
+    * { box-sizing: border-box; } body { margin: 0; } main { width: min(920px, calc(100% - 32px)); margin: 32px auto; }
+    header, section { margin-bottom: 18px; padding: 24px; border: 1px solid #dbe3ee; border-radius: 18px; background: #fff; }
+    h1, h2 { margin-top: 0; } p, li { line-height: 1.7; } code { padding: 2px 5px; border-radius: 5px; background: #edf2f7; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; } .meta span { padding: 5px 10px; border-radius: 999px; background: #fff0df; font-size: 13px; }
+    @media (max-width: 600px) { main { width: calc(100% - 20px); margin: 10px auto; } header, section { padding: 18px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header><h1>修复分类写入成功后响应 500</h1><p>分类新增或移动已经提交数据库，但响应中包含不能直接 JSON 编码的时间对象，导致客户端误判失败并可能重复操作。</p><div class="meta"><span>状态：ACTIVE</span><span>创建日期：2026-08-18</span><span>所属模块：webserver</span><span>影响范围：分类写接口与响应契约</span><span>需求来源：用户反馈</span></div></header>
+  <section><h2>1. 原始诉求</h2><p>“新增分类 和移动分类 都报错：服务器异常，状态码: 500；但是实际好像分类已经新增和移动成功。”</p></section>
+  <section><h2>2. 根因证据</h2><p><code>create_category()</code> 与 <code>update_category()</code> 先提交事务，handler 随后返回模型 <code>to_dict()</code>。该结果包含 <code>create_time</code>、<code>update_time</code> 的 Python <code>datetime</code> 对象；最小复现确认 Tornado 抛出 <code>TypeError: Object of type datetime is not JSON serializable</code>。</p></section>
+  <section><h2>3. 方案</h2><ul><li>新增统一分类序列化函数，将时间字段转换为 ISO 8601 字符串，保留既有响应字段。</li><li>全站分类和个人书架分类的 create/update 响应统一使用该函数。</li><li>不改变分类事务、树结构和数据库数据；错误发生在提交后的响应阶段，因此无需数据迁移。</li></ul></section>
+  <section><h2>4. 风险与测试</h2><p>兼容风险低：字段名称保持不变，时间值从不可编码对象变为可用字符串。测试覆盖 LibraryCategory、ShelfCategory、新增、移动及完整 Tornado JSON 编码；同时回归现有分类服务测试。</p></section>
+  <section><h2>5. 测试结果</h2><ul><li>最小复现：新增和移动后的原始 <code>to_dict()</code> 均稳定触发 <code>TypeError: Object of type datetime is not JSON serializable</code>。</li><li><code>pytest tests/test_categories.py tests/test_annotations.py tests/test_logging_config.py -q</code>：29 项通过。</li><li>分类回归测试分别覆盖全站分类与个人分类的新增、移动、时间字符串及 Tornado JSON 编解码。</li><li>Ruff check、Ruff format 和 <code>git diff --check</code>：通过。</li><li><code>make check-design</code>：通过。</li></ul></section>
+</main>
+</body>
+</html>

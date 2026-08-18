@@ -1,4 +1,5 @@
 import pytest
+import tornado.escape
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
@@ -22,6 +23,7 @@ from webserver.services.categories import (
     inherit_library_path,
     merge_categories,
     remove_book_from_shelf_categories,
+    serialize_category,
     update_category,
 )
 
@@ -105,6 +107,21 @@ def test_category_can_move_back_to_root(session):
     update_category(session, LibraryCategory, child.id, parent_id=None)
 
     assert child.parent_id is None
+
+
+@pytest.mark.parametrize("model,reader_id", [(LibraryCategory, None), (ShelfCategory, 1)])
+def test_created_and_moved_category_response_is_json_serializable(session, model, reader_id):
+    parent = create_category(session, model, "父分类", reader_id=reader_id)
+    child = create_category(session, model, "子分类", reader_id=reader_id)
+
+    created = serialize_category(child)
+    update_category(session, model, child.id, reader_id=reader_id, parent_id=parent.id)
+    moved = serialize_category(child)
+
+    assert tornado.escape.json_decode(tornado.escape.json_encode({"category": created}))["category"]["name"] == "子分类"
+    assert tornado.escape.json_decode(tornado.escape.json_encode({"category": moved}))["category"]["parent_id"] == parent.id
+    assert isinstance(created["create_time"], str)
+    assert isinstance(moved["update_time"], str)
 
 
 def test_merge_moves_books_and_children(session):

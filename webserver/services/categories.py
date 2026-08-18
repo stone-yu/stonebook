@@ -17,6 +17,15 @@ class CategoryError(ValueError):
     pass
 
 
+def serialize_category(category):
+    data = category.to_dict()
+    for field in ("create_time", "update_time"):
+        value = data.get(field)
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            data[field] = value.isoformat()
+    return data
+
+
 def normalize_name(name):
     name = " ".join(str(name or "").strip().split())
     if not name:
