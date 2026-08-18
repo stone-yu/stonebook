@@ -44,6 +44,15 @@
                 </v-icon>{{ t('admin.books.kindleConvert') }}
             </v-btn>
             <v-btn
+                :disabled="loading"
+                variant="outlined"
+                color="secondary"
+                prepend-icon="mdi-widgets"
+                @click="categoryDialog = true"
+            >
+                {{ t('admin.books.button.categoryManage') }}
+            </v-btn>
+            <v-btn
                 v-if="books_selected.length > 0"
                 :disabled="loading"
                 variant="outlined"
@@ -66,6 +75,28 @@
                 }})
             </v-btn>
             <v-spacer />
+            <v-select
+                v-model="categoryFilter"
+                :items="categoryOptions"
+                item-title="title"
+                item-value="value"
+                :label="t('admin.books.label.category')"
+                :placeholder="t('admin.books.label.allCategories')"
+                clearable
+                density="compact"
+                hide-details
+                style="max-width: 220px"
+                @update:model-value="onCategoryFilterChange"
+            />
+            <v-switch
+                v-if="categoryFilter"
+                v-model="categoryRecursive"
+                :label="t('category.includeDescendants')"
+                density="compact"
+                hide-details
+                color="primary"
+                @update:model-value="onCategoryFilterChange"
+            />
             <v-text-field
                 v-model="search"
                 density="compact"
@@ -220,6 +251,16 @@
                 </div>
             </template>
 
+            <template #item.category="{ item }">
+                <div
+                    class="cursor-pointer"
+                    style="min-width: 80px; white-space: normal; word-break: break-word;"
+                    @click="editBookCategory(item)"
+                >
+                    {{ categoryName(item.id) || '-' }}
+                </div>
+            </template>
+
             <template #item.comments="{ item }">
                 <div
                     class="cursor-pointer"
@@ -305,7 +346,7 @@
         <!-- 批量封面编辑对话框 -->
         <v-dialog
             v-model="batchCoverDialog"
-            width="720"
+            width="520"
             persistent
         >
             <v-card>
@@ -313,41 +354,16 @@
                 <v-card-subtitle>
                     {{ t('admin.books.batchCoverSubtitle', { count: batchCoverBooks.length }) }}
                 </v-card-subtitle>
-                <v-card-text class="batch-cover-list">
-                    <div
-                        v-for="book in batchCoverBooks"
-                        :key="book.id"
-                        class="batch-cover-row d-flex align-center ga-4 py-3"
-                    >
-                        <v-img
-                            :src="book.img"
-                            width="44"
-                            height="62"
-                            max-width="44"
-                            cover
-                            class="rounded"
-                        />
-                        <div class="batch-cover-book flex-grow-1">
-                            <div class="text-body-2 font-weight-medium text-truncate">
-                                {{ book.title }}
-                            </div>
-                            <div class="text-caption text-medium-emphasis">
-                                ID {{ book.id }}
-                            </div>
-                        </div>
-                        <v-file-input
-                            :model-value="batchCoverFiles[book.id] || null"
-                            class="batch-cover-input"
-                            density="compact"
-                            variant="outlined"
-                            hide-details
-                            accept="image/jpeg, image/png, image/gif"
-                            prepend-icon=""
-                            :label="t('book.selectCover')"
-                            :disabled="batchCoverSaving"
-                            @update:model-value="setBatchCoverFile(book.id, $event)"
-                        />
-                    </div>
+                <v-card-text>
+                    <v-file-input
+                        v-model="batchCoverFile"
+                        accept="image/jpeg, image/png, image/gif"
+                        prepend-icon="mdi-image"
+                        :label="t('book.selectCover')"
+                        :disabled="batchCoverSaving"
+                        @update:model-value="onBatchCoverFileChange"
+                    />
+                    <small class="text-caption">{{ t('book.coverSupported') }}</small>
                     <v-progress-linear
                         v-if="batchCoverSaving"
                         class="mt-4"
@@ -357,10 +373,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <span class="text-caption text-medium-emphasis px-2">
-                        {{ t('admin.books.batchCoverSelected', {
-                            selected: batchCoverFileCount,
-                            total: batchCoverBooks.length,
-                        }) }}
+                        {{ t('admin.books.batchCoverSelected', { total: batchCoverBooks.length }) }}
                     </span>
                     <v-spacer />
                     <v-btn
@@ -372,10 +385,75 @@
                     <v-btn
                         color="primary"
                         :loading="batchCoverSaving"
-                        :disabled="batchCoverFileCount === 0"
+                        :disabled="!batchCoverFile"
                         @click="saveBatchCovers"
                     >
                         {{ t('admin.books.button.uploadCovers') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- 分类管理对话框 -->
+        <v-dialog
+            v-model="categoryDialog"
+            width="480"
+            scrollable
+        >
+            <v-card>
+                <v-card-title class="d-flex align-center">
+                    {{ t('admin.books.button.categoryManage') }}
+                    <v-spacer />
+                    <v-btn
+                        icon="mdi-close"
+                        size="small"
+                        variant="text"
+                        @click="categoryDialog = false"
+                    />
+                </v-card-title>
+                <v-divider />
+                <v-card-text class="pa-2">
+                    <CategoryTreePanel
+                        :title="t('category.libraryTitle')"
+                        :tree="categoryTree"
+                        :selected-id="categoryFilter"
+                        :manageable="true"
+                        show-uncategorized
+                        :uncategorized-count="categoryUncategorizedCount"
+                        @select="selectCategoryFilter"
+                        @operate="operateCategory"
+                    />
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
+        <!-- 单本调整分类对话框 -->
+        <v-dialog
+            v-model="bookCategoryDialog"
+            max-width="500"
+        >
+            <v-card>
+                <v-card-title>{{ t('category.moveBookTitle', { title: activeBook?.title || '' }) }}</v-card-title>
+                <v-card-text>
+                    <v-select
+                        v-model="bookCategoryId"
+                        :items="categoryOptions"
+                        item-title="title"
+                        item-value="value"
+                        :label="t('category.libraryTitle')"
+                        clearable
+                    />
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn @click="bookCategoryDialog = false">
+                        {{ t('common.cancel') }}
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        @click="saveBookCategory"
+                    >
+                        {{ t('common.save') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -590,7 +668,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/stores/main';
-import { selectedBooks, uploadBookCovers } from '@/utils/batch-covers';
+import CategoryTreePanel from '@/components/CategoryTreePanel.vue';
+import { selectedBooks, uploadOneCoverToBooks } from '@/utils/batch-covers';
 
 const store = useMainStore();
 const { $backend, $alert } = useNuxtApp();
@@ -606,7 +685,7 @@ const delete_dialog = ref(false);
 const kindle_convert_dialog = ref(false);
 const coverFile = ref(null);
 const batchCoverDialog = ref(false);
-const batchCoverFiles = ref({});
+const batchCoverFile = ref(null);
 const batchCoverSaving = ref(false);
 const batchCoverProgress = ref({ done: 0, total: 0 });
 
@@ -618,6 +697,16 @@ const loading = ref(false);
 const itemsPerPage = ref(10);
 const options = ref({ page: 1, itemsPerPage: 10, sortBy: [{ key: 'id', order: 'desc' }] });
 
+const categoryTree = ref([]);
+const bookCategories = ref({});
+const categoryUncategorizedCount = ref(0);
+const categoryFilter = ref(null);
+const categoryRecursive = ref(true);
+const categoryDialog = ref(false);
+const bookCategoryDialog = ref(false);
+const activeBook = ref(null);
+const bookCategoryId = ref(null);
+
 const headers = computed(() => [
     { title: t('book.cover'), key: 'img', sortable: false, width: '80px' },
     { title: 'ID', key: 'id', sortable: true, width: '80px' },
@@ -626,6 +715,7 @@ const headers = computed(() => [
     { title: t('book.field.rating'), key: 'rating', sortable: false, width: '60px' },
     { title: t('book.field.publisher'), key: 'publisher', sortable: false },
     { title: t('book.field.tags'), key: 'tags', sortable: true, width: '100px' },
+    { title: t('admin.books.label.category'), key: 'category', sortable: false, width: '120px' },
     { title: t('book.field.comments'), key: 'comments', sortable: true },
     { title: t('admin.books.user.action'), key: 'actions', sortable: false },
 ]);
@@ -640,7 +730,18 @@ const progress = ref({
 
 const auto_fill_mins = computed(() => Math.floor(total.value / 60) + 1);
 const batchCoverBooks = computed(() => selectedBooks(items.value, books_selected.value));
-const batchCoverFileCount = computed(() => Object.values(batchCoverFiles.value).filter(Boolean).length);
+
+const flattenCategory = nodes => nodes.flatMap(node => [node, ...flattenCategory(node.children || [])]);
+const categoryOptions = computed(() => flattenCategory(categoryTree.value).map(node => ({
+    title: `${'— '.repeat(Math.max(0, node.depth - 1))}${node.name}`,
+    value: node.id,
+})));
+const categoryName = (bookId) => {
+    const cid = bookCategories.value[String(bookId)] || bookCategories.value[bookId];
+    if (cid == null) return '';
+    const node = flattenCategory(categoryTree.value).find(n => n.id === cid);
+    return node ? node.name : '';
+};
 
 // Edit dialog state
 const editDialog = ref(false);
@@ -674,6 +775,10 @@ const getDataFromApi = () => {
     data.append('desc', sortOrder);
     if (itemsPerPage != undefined) data.append('num', itemsPerPage);
     if (search.value) data.append('search', search.value);
+    if (categoryFilter.value) {
+        data.append('category_id', categoryFilter.value);
+        data.append('recursive', categoryRecursive.value);
+    }
 
     $backend('/admin/book/list?' + data.toString())
         .then((rsp) => {
@@ -869,26 +974,28 @@ const saveCover = () => {
 };
 
 const openBatchCoverDialog = () => {
-    batchCoverFiles.value = {};
+    batchCoverFile.value = null;
     batchCoverProgress.value = { done: 0, total: 0 };
     batchCoverDialog.value = true;
 };
 
-const setBatchCoverFile = (bookId, value) => {
-    const file = Array.isArray(value) ? value[0] : value;
+const onBatchCoverFileChange = () => {
+    const file = Array.isArray(batchCoverFile.value) ? batchCoverFile.value[0] : batchCoverFile.value;
     if (file && file.size > 5 * 1024 * 1024) {
         if ($alert) $alert('error', t('admin.books.message.coverSizeLimit'));
-        delete batchCoverFiles.value[bookId];
-        batchCoverFiles.value = { ...batchCoverFiles.value };
-        return;
+        batchCoverFile.value = null;
     }
-    batchCoverFiles.value = { ...batchCoverFiles.value, [bookId]: file || null };
 };
 
 const saveBatchCovers = async () => {
+    const file = Array.isArray(batchCoverFile.value) ? batchCoverFile.value[0] : batchCoverFile.value;
+    if (!file) {
+        if ($alert) $alert('info', t('admin.books.message.selectCoverFirst'));
+        return;
+    }
     batchCoverSaving.value = true;
-    batchCoverProgress.value = { done: 0, total: batchCoverFileCount.value };
-    const result = await uploadBookCovers(batchCoverFiles.value, $backend, (done, totalFiles) => {
+    batchCoverProgress.value = { done: 0, total: batchCoverBooks.value.length };
+    const result = await uploadOneCoverToBooks(file, batchCoverBooks.value.map(book => book.id), $backend, (done, totalFiles) => {
         batchCoverProgress.value = { done, total: totalFiles };
     });
     batchCoverSaving.value = false;
@@ -903,6 +1010,55 @@ const saveBatchCovers = async () => {
     }
     getDataFromApi();
 };
+
+const loadCategories = () => {
+    $backend('/categories').then((rsp) => {
+        if (rsp.err === 'ok') {
+            categoryTree.value = rsp.tree || [];
+            bookCategories.value = rsp.book_categories || {};
+            categoryUncategorizedCount.value = rsp.uncategorized_count || 0;
+        }
+    });
+};
+
+const onCategoryFilterChange = () => {
+    options.value.page = 1;
+    getDataFromApi();
+};
+
+const selectCategoryFilter = (id) => {
+    categoryFilter.value = id;
+    options.value.page = 1;
+    getDataFromApi();
+};
+
+const operateCategory = async (payload) => {
+    const rsp = await $backend('/admin/categories', { method: 'POST', body: JSON.stringify(payload) });
+    if (rsp.err !== 'ok') {
+        if ($alert) $alert('error', rsp.msg);
+    } else {
+        await loadCategories();
+    }
+};
+
+const editBookCategory = (item) => {
+    activeBook.value = item;
+    const cid = bookCategories.value[String(item.id)] || bookCategories.value[item.id] || null;
+    bookCategoryId.value = cid;
+    bookCategoryDialog.value = true;
+};
+
+const saveBookCategory = async () => {
+    if (!activeBook.value) return;
+    const payload = bookCategoryId.value
+        ? { action: 'assign', category_id: bookCategoryId.value, book_id: activeBook.value.id }
+        : { action: 'unassign', book_id: activeBook.value.id };
+    bookCategoryDialog.value = false;
+    await operateCategory(payload);
+    getDataFromApi();
+};
+
+onMounted(() => { loadCategories(); });
 
 const show_kindle_convert_dialog = () => {
     kindle_convert_dialog.value = true;
@@ -950,23 +1106,6 @@ useHead(() => ({
 <style scoped>
 .cursor-pointer {
     cursor: pointer;
-}
-
-.batch-cover-list {
-    max-height: min(62vh, 560px);
-    overflow-y: auto;
-}
-
-.batch-cover-row + .batch-cover-row {
-    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.batch-cover-book {
-    min-width: 0;
-}
-
-.batch-cover-input {
-    flex: 0 1 300px;
 }
 
 /* 加宽分页选择器 */

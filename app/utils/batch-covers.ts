@@ -6,15 +6,16 @@ export function selectedBooks<T extends Book>(items: T[], selectedIds: Array<num
     return items.filter(item => ids.has(item.id));
 }
 
-export async function uploadBookCovers(
-    files: Record<number, File>,
+export async function uploadOneCoverToBooks(
+    file: File,
+    bookIds: Array<number>,
     backend: Backend,
     onProgress: (done: number, total: number) => void = () => {},
 ) {
-    const entries = Object.entries(files).filter(([, file]) => file instanceof File);
+    const ids = bookIds.map(id => Number(id)).filter(id => Number.isFinite(id));
     let succeeded = 0;
     let failed = 0;
-    for (const [bookId, file] of entries) {
+    for (const bookId of ids) {
         const formData = new FormData();
         formData.append('cover', file);
         try {
@@ -24,7 +25,7 @@ export async function uploadBookCovers(
         } catch {
             failed += 1;
         }
-        onProgress(succeeded + failed, entries.length);
+        onProgress(succeeded + failed, ids.length);
     }
-    return { total: entries.length, succeeded, failed };
+    return { total: ids.length, succeeded, failed };
 }

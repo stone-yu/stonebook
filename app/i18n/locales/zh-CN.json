@@ -565,10 +565,11 @@
   "discover": {
     "eyebrow": "搜索与发现",
     "title": "今天想读什么？",
-    "subtitle": "从自己的书库开始，也可以到网络书库寻找新内容。",
+    "subtitle": "用关键词搜索，或从上方入口浏览书库。",
     "placeholder": "搜索书名、作者、ISBN 或标签",
     "localDescription": "浏览已经整理入库的全部藏书",
     "networkDescription": "通过已配置的书源发现和保存内容",
+    "categoryDescription": "按多级分类浏览全部藏书",
     "refineEyebrow": "快速缩小范围",
     "refineTitle": "按你熟悉的方式浏览",
     "back": "返回找书",
@@ -682,13 +683,16 @@
         "autoUpdateBookInfo": "自动更新图书信息...",
         "bulkDelete": "批量删除",
         "batchCover": "批量修改封面",
-        "uploadCovers": "上传封面"
+        "uploadCovers": "上传封面",
+        "categoryManage": "分类管理"
       },
       "batchCoverTitle": "批量修改封面",
-      "batchCoverSubtitle": "为选中的 {count} 本书分别选择封面",
-      "batchCoverSelected": "已选择 {selected}/{total} 张封面",
+      "batchCoverSubtitle": "选择一张封面，应用到全部选中的 {count} 本书",
+      "batchCoverSelected": "将应用到 {total} 本选中书籍",
       "label": {
         "search": "搜索",
+        "category": "分类",
+        "allCategories": "全部分类",
         "title": "书名",
         "authors": "作者",
         "rating": "评分",

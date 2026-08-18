@@ -19,9 +19,10 @@ from webserver.handlers.admin_opds_sources import AdminOpdsSources
 from webserver.handlers.base import BaseHandler, auth, is_admin, js
 from webserver.i18n import _
 from webserver.logging_config import resolve_log_file
-from webserver.models import Reader, ScanFile
+from webserver.models import LibraryBookCategory, LibraryCategory, Reader, ScanFile
 from webserver.services.autofill import AutoFillService
 from webserver.services.batch_convert import BatchConvertService
+from webserver.services.categories import category_book_ids
 from webserver.services.mail import MailService
 from webserver.services.opds_import import OPDSImportService
 from webserver.services.ssl_certificate import (
@@ -899,10 +900,23 @@ class AdminBookList(BaseHandler):
         sort = self.get_argument("sort", "id")
         desc = self.get_argument("desc", "desc") == "true"
         search = self.get_argument("search", "")
+        category_id = self.get_argument("category_id", "")
+        recursive = self.get_argument("recursive", "true").lower() != "false"
         logging.debug("num=%s, page=%d, sort=%s, desc=%s" % (num, page, sort, desc))
 
         self.db.sort(field=sort, ascending=(not desc))
         all_ids = list(self.cache.search(search))
+        if category_id != "":
+            try:
+                cid = int(category_id)
+            except ValueError:
+                return {"err": "params.error", "msg": _("分类 ID 非法")}
+            if cid == 0:
+                assigned = {row[0] for row in self.session.query(LibraryBookCategory.book_id).all()}
+                all_ids = [bid for bid in all_ids if bid not in assigned]
+            else:
+                category_ids = set(category_book_ids(self.session, LibraryCategory, cid, recursive))
+                all_ids = [bid for bid in all_ids if bid in category_ids]
         total = len(all_ids)
 
         # sort by id
