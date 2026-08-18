@@ -7,6 +7,7 @@ from webserver.handlers.base import BaseHandler, auth, is_admin, js
 from webserver.models import LibraryBookCategory, LibraryCategory, ShelfCategory, ShelfCategoryBook
 from webserver.services.categories import (
     CategoryError,
+    add_books_to_shelf,
     assign_book,
     build_tree,
     category_book_ids,
@@ -65,6 +66,21 @@ class LibraryCategoryBooks(BaseHandler):
             ids = category_book_ids(self.session, LibraryCategory, category.id, recursive)
         books = formatted_books(self, ids)
         return {"err": "ok", "total": len(books), "books": books}
+
+
+class LibraryCategoryShelf(BaseHandler):
+    @js
+    @auth
+    def post(self, category_id):
+        category = self.session.get(LibraryCategory, int(category_id))
+        if category is None:
+            return {"err": "category.not_found", "msg": "分类不存在"}
+        data = request_json(self)
+        recursive = data.get("recursive", True) is not False
+        category_ids = category_book_ids(self.session, LibraryCategory, category.id, recursive)
+        visible_ids = {book["id"] for book in self.get_books(ids=category_ids)} if category_ids else set()
+        result = add_books_to_shelf(self.session, self.user_id(), [bid for bid in category_ids if bid in visible_ids])
+        return {"err": "ok", **result}
 
 
 class LibraryCategoryAdmin(BaseHandler):
@@ -187,6 +203,7 @@ def routes():
     return [
         (r"/api/categories", LibraryCategoryTree),
         (r"/api/categories/([0-9]+)/books", LibraryCategoryBooks),
+        (r"/api/categories/([0-9]+)/shelf", LibraryCategoryShelf),
         (r"/api/admin/categories", LibraryCategoryAdmin),
         (r"/api/shelf/categories", ShelfCategoryTree),
         (r"/api/shelf/categories/([0-9]+)/books", ShelfCategoryBooks),

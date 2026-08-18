@@ -2,7 +2,7 @@
     <div>
         <BookBrowseLayout
             :title="selectedTitle"
-            :books="books"
+            :books="sortedBooks"
             :loading="loading"
             :error="error"
             :empty-text="t('category.empty')"
@@ -16,8 +16,11 @@
                     :manageable="Boolean(store.user.is_admin)"
                     show-uncategorized
                     :uncategorized-count="uncategorizedCount"
+                    :shelfable="Boolean(store.user.is_login)"
+                    :shelf-loading-id="shelfLoadingId"
                     @select="selectCategory"
                     @operate="operate"
+                    @add-to-shelf="openShelfDialog"
                 />
             </template>
             <template #controls>
@@ -31,14 +34,14 @@
             </template>
             <template #default>
                 <div
-                    v-if="books.length === 0"
+                    v-if="sortedBooks.length === 0"
                     class="text-center py-8 text-grey"
                 >
                     {{ t('category.empty') }}
                 </div>
                 <v-row v-else>
                     <v-col
-                        v-for="book in books"
+                        v-for="book in sortedBooks"
                         :key="book.id"
                         cols="4"
                         sm="3"
@@ -95,6 +98,34 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+        <v-dialog
+            v-model="shelfDialog"
+            max-width="480"
+        >
+            <v-card>
+                <v-card-title>{{ t('category.addCategoryTitle') }}</v-card-title>
+                <v-card-text>
+                    {{ t('category.addCategoryConfirm', {
+                        name: shelfCategory?.name || '',
+                        count: shelfCategory?.count || 0,
+                    }) }}
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn @click="shelfDialog = false">
+                        {{ t('common.cancel') }}
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        prepend-icon="mdi-bookshelf-plus"
+                        :loading="Boolean(shelfLoadingId)"
+                        @click="addCategoryToShelf"
+                    >
+                        {{ t('category.addToShelf') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
@@ -102,10 +133,11 @@
 import { computed, onMounted, ref } from 'vue';
 import CategoryTreePanel from '@/components/CategoryTreePanel.vue';
 import BookBrowseLayout from '@/components/BookBrowseLayout.vue';
+import { sortCategoryBooks } from '@/utils/category-books';
 import { useMainStore } from '@/stores/main';
 import { useI18n } from 'vue-i18n';
 
-const { $backend } = useNuxtApp();
+const { $backend, $alert } = useNuxtApp();
 const store = useMainStore();
 const { t } = useI18n();
 const tree = ref([]);
@@ -119,12 +151,16 @@ const assignments = ref({});
 const bookDialog = ref(false);
 const activeBook = ref(null);
 const bookCategoryId = ref(null);
+const shelfDialog = ref(false);
+const shelfCategory = ref(null);
+const shelfLoadingId = ref(null);
 
 const flatten = nodes => nodes.flatMap(node => [node, ...flatten(node.children || [])]);
 const categoryOptions = computed(() => flatten(tree.value).map(node => ({
     title: `${'— '.repeat(Math.max(0, node.depth - 1))}${node.name}`,
     value: node.id,
 })));
+const sortedBooks = computed(() => sortCategoryBooks(books.value, assignments.value, tree.value));
 const selectedTitle = computed(() => {
     if (selectedId.value === null) return t('category.allBooks');
     if (selectedId.value === 0) return t('category.uncategorized');
@@ -170,6 +206,28 @@ async function saveBookCategory() {
         : { action: 'unassign', book_id: activeBook.value.id };
     await operate(payload);
     bookDialog.value = false;
+}
+function openShelfDialog(category) {
+    shelfCategory.value = category;
+    shelfDialog.value = true;
+}
+async function addCategoryToShelf() {
+    if (!shelfCategory.value) return;
+    shelfLoadingId.value = shelfCategory.value.id;
+    try {
+        const rsp = await $backend(`/categories/${shelfCategory.value.id}/shelf`, {
+            method: 'POST',
+            body: JSON.stringify({ recursive: true }),
+        });
+        if (rsp.err === 'ok') {
+            shelfDialog.value = false;
+            if ($alert) $alert('success', t('category.addCategorySuccess', rsp));
+        } else if ($alert) $alert('error', rsp.msg);
+    } catch (exception) {
+        if ($alert) $alert('error', t('errors.networkError'));
+    } finally {
+        shelfLoadingId.value = null;
+    }
 }
 
 onMounted(async () => { store.setNavbar(true); await Promise.all([loadTree(), loadBooks()]); });

@@ -55,9 +55,22 @@
                 </template>
                 <v-list-item-title>{{ item.name }}</v-list-item-title>
                 <template #append>
-                    <v-chip size="x-small">
-                        {{ item.count }}
-                    </v-chip>
+                    <div class="category-tree-actions d-flex align-center ga-1">
+                        <v-chip size="x-small">
+                            {{ item.count }}
+                        </v-chip>
+                        <v-btn
+                            v-if="shelfable && item.count > 0"
+                            class="category-shelf-action"
+                            icon="mdi-bookshelf-plus"
+                            size="x-small"
+                            variant="text"
+                            color="primary"
+                            :loading="shelfLoadingId === item.id"
+                            :aria-label="t('category.addCategoryToShelf', { name: item.name })"
+                            @click.stop="$emit('add-to-shelf', item)"
+                        />
+                    </div>
                 </template>
             </v-list-item>
         </v-list>
@@ -154,8 +167,10 @@ const props = defineProps({
     manageable: { type: Boolean, default: false },
     showUncategorized: { type: Boolean, default: false },
     uncategorizedCount: { type: Number, default: 0 },
+    shelfable: { type: Boolean, default: false },
+    shelfLoadingId: { type: Number, default: null },
 });
-const emit = defineEmits(['select', 'operate']);
+const emit = defineEmits(['select', 'operate', 'add-to-shelf']);
 const { t } = useI18n();
 const dialog = ref(false);
 const mode = ref('create');
@@ -198,3 +213,21 @@ function submit() {
     dialog.value = false;
 }
 </script>
+
+<style scoped>
+.category-shelf-action {
+    opacity: 0;
+    transition: opacity 160ms ease;
+}
+
+.category-tree-item:hover .category-shelf-action,
+.category-tree-item:focus-within .category-shelf-action {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .category-shelf-action {
+        opacity: 1;
+    }
+}
+</style>

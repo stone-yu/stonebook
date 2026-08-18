@@ -57,4 +57,15 @@ describe('CategoryTreePanel.vue', () => {
         expect(manageable.text()).toContain('category.rename');
         expect(manageable.text()).toContain('category.merge');
     });
+
+    it('emits a separate shelf action without selecting the category', async () => {
+        const wrapper = mount(CategoryTreePanel, {
+            global: { plugins: [vuetify] },
+            props: { title: '分类', tree, shelfable: true },
+        });
+
+        await wrapper.get('[data-category-id="1"] .category-shelf-action').trigger('click');
+        expect(wrapper.emitted('add-to-shelf')).toEqual([[expect.objectContaining({ id: 1 })]]);
+        expect(wrapper.emitted('select')).toBeUndefined();
+    });
 });

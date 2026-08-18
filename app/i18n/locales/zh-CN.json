@@ -393,7 +393,12 @@
     "organizeBook": "整理《{title}》",
     "personalCategories": "个人分类",
     "moveBook": "调整分类",
-    "moveBookTitle": "调整《{title}》的分类"
+    "moveBookTitle": "调整《{title}》的分类",
+    "addToShelf": "加入书架",
+    "addCategoryToShelf": "将分类 {name} 加入书架",
+    "addCategoryTitle": "批量加入书架",
+    "addCategoryConfirm": "将“{name}”及其子分类中的 {count} 本书加入书架。已在书架中的图书会自动跳过。",
+    "addCategorySuccess": "已加入 {added} 本，跳过 {skipped} 本"
   },
   "user": {
     "history": {
@@ -675,8 +680,13 @@
       "button": {
         "refresh": "刷新",
         "autoUpdateBookInfo": "自动更新图书信息...",
-        "bulkDelete": "批量删除"
+        "bulkDelete": "批量删除",
+        "batchCover": "批量修改封面",
+        "uploadCovers": "上传封面"
       },
+      "batchCoverTitle": "批量修改封面",
+      "batchCoverSubtitle": "为选中的 {count} 本书分别选择封面",
+      "batchCoverSelected": "已选择 {selected}/{total} 张封面",
       "label": {
         "search": "搜索",
         "title": "书名",
@@ -706,7 +716,9 @@
         "operationIrreversible": "此操作不可逆，删除后无法恢复",
         "selectBooksFirst": "请先选择要操作的书籍",
         "coverSizeLimit": "封面图大小不能超过5MB",
-        "selectCoverFirst": "请选择要上传的封面图"
+        "selectCoverFirst": "请选择要上传的封面图",
+        "batchCoverSuccess": "已更新 {count} 本书的封面",
+        "batchCoverPartial": "封面更新完成：成功 {succeeded} 本，失败 {failed} 本"
       },
       "status": {
         "ready": "可导入",

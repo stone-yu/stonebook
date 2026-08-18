@@ -47,6 +47,16 @@
                 v-if="books_selected.length > 0"
                 :disabled="loading"
                 variant="outlined"
+                color="primary"
+                prepend-icon="mdi-image-multiple-outline"
+                @click="openBatchCoverDialog"
+            >
+                {{ t('admin.books.button.batchCover') }} ({{ books_selected.length }})
+            </v-btn>
+            <v-btn
+                v-if="books_selected.length > 0"
+                :disabled="loading"
+                variant="outlined"
                 color="error"
                 @click="delete_selected_books"
             >
@@ -292,6 +302,85 @@
             </v-card>
         </v-dialog>
 
+        <!-- 批量封面编辑对话框 -->
+        <v-dialog
+            v-model="batchCoverDialog"
+            width="720"
+            persistent
+        >
+            <v-card>
+                <v-card-title>{{ t('admin.books.batchCoverTitle') }}</v-card-title>
+                <v-card-subtitle>
+                    {{ t('admin.books.batchCoverSubtitle', { count: batchCoverBooks.length }) }}
+                </v-card-subtitle>
+                <v-card-text class="batch-cover-list">
+                    <div
+                        v-for="book in batchCoverBooks"
+                        :key="book.id"
+                        class="batch-cover-row d-flex align-center ga-4 py-3"
+                    >
+                        <v-img
+                            :src="book.img"
+                            width="44"
+                            height="62"
+                            max-width="44"
+                            cover
+                            class="rounded"
+                        />
+                        <div class="batch-cover-book flex-grow-1">
+                            <div class="text-body-2 font-weight-medium text-truncate">
+                                {{ book.title }}
+                            </div>
+                            <div class="text-caption text-medium-emphasis">
+                                ID {{ book.id }}
+                            </div>
+                        </div>
+                        <v-file-input
+                            :model-value="batchCoverFiles[book.id] || null"
+                            class="batch-cover-input"
+                            density="compact"
+                            variant="outlined"
+                            hide-details
+                            accept="image/jpeg, image/png, image/gif"
+                            prepend-icon=""
+                            :label="t('book.selectCover')"
+                            :disabled="batchCoverSaving"
+                            @update:model-value="setBatchCoverFile(book.id, $event)"
+                        />
+                    </div>
+                    <v-progress-linear
+                        v-if="batchCoverSaving"
+                        class="mt-4"
+                        color="primary"
+                        :model-value="batchCoverProgress.total ? batchCoverProgress.done / batchCoverProgress.total * 100 : 0"
+                    />
+                </v-card-text>
+                <v-card-actions>
+                    <span class="text-caption text-medium-emphasis px-2">
+                        {{ t('admin.books.batchCoverSelected', {
+                            selected: batchCoverFileCount,
+                            total: batchCoverBooks.length,
+                        }) }}
+                    </span>
+                    <v-spacer />
+                    <v-btn
+                        :disabled="batchCoverSaving"
+                        @click="batchCoverDialog = false"
+                    >
+                        {{ t('common.cancel') }}
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        :loading="batchCoverSaving"
+                        :disabled="batchCoverFileCount === 0"
+                        @click="saveBatchCovers"
+                    >
+                        {{ t('admin.books.button.uploadCovers') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <!-- 封面编辑对话框 -->
         <v-dialog
             v-model="coverDialog"
@@ -501,6 +590,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/stores/main';
+import { selectedBooks, uploadBookCovers } from '@/utils/batch-covers';
 
 const store = useMainStore();
 const { $backend, $alert } = useNuxtApp();
@@ -515,6 +605,10 @@ const meta_dialog = ref(false);
 const delete_dialog = ref(false);
 const kindle_convert_dialog = ref(false);
 const coverFile = ref(null);
+const batchCoverDialog = ref(false);
+const batchCoverFiles = ref({});
+const batchCoverSaving = ref(false);
+const batchCoverProgress = ref({ done: 0, total: 0 });
 
 const books_selected = ref([]);
 const search = ref('');
@@ -545,6 +639,8 @@ const progress = ref({
 });
 
 const auto_fill_mins = computed(() => Math.floor(total.value / 60) + 1);
+const batchCoverBooks = computed(() => selectedBooks(items.value, books_selected.value));
+const batchCoverFileCount = computed(() => Object.values(batchCoverFiles.value).filter(Boolean).length);
 
 // Edit dialog state
 const editDialog = ref(false);
@@ -772,6 +868,42 @@ const saveCover = () => {
     });
 };
 
+const openBatchCoverDialog = () => {
+    batchCoverFiles.value = {};
+    batchCoverProgress.value = { done: 0, total: 0 };
+    batchCoverDialog.value = true;
+};
+
+const setBatchCoverFile = (bookId, value) => {
+    const file = Array.isArray(value) ? value[0] : value;
+    if (file && file.size > 5 * 1024 * 1024) {
+        if ($alert) $alert('error', t('admin.books.message.coverSizeLimit'));
+        delete batchCoverFiles.value[bookId];
+        batchCoverFiles.value = { ...batchCoverFiles.value };
+        return;
+    }
+    batchCoverFiles.value = { ...batchCoverFiles.value, [bookId]: file || null };
+};
+
+const saveBatchCovers = async () => {
+    batchCoverSaving.value = true;
+    batchCoverProgress.value = { done: 0, total: batchCoverFileCount.value };
+    const result = await uploadBookCovers(batchCoverFiles.value, $backend, (done, totalFiles) => {
+        batchCoverProgress.value = { done, total: totalFiles };
+    });
+    batchCoverSaving.value = false;
+    if (result.failed === 0) {
+        batchCoverDialog.value = false;
+        books_selected.value = [];
+        snack.value = true;
+        snackColor.value = 'success';
+        snackText.value = t('admin.books.message.batchCoverSuccess', { count: result.succeeded });
+    } else if ($alert) {
+        $alert('error', t('admin.books.message.batchCoverPartial', result));
+    }
+    getDataFromApi();
+};
+
 const show_kindle_convert_dialog = () => {
     kindle_convert_dialog.value = true;
 };
@@ -818,6 +950,23 @@ useHead(() => ({
 <style scoped>
 .cursor-pointer {
     cursor: pointer;
+}
+
+.batch-cover-list {
+    max-height: min(62vh, 560px);
+    overflow-y: auto;
+}
+
+.batch-cover-row + .batch-cover-row {
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.batch-cover-book {
+    min-width: 0;
+}
+
+.batch-cover-input {
+    flex: 0 1 300px;
 }
 
 /* 加宽分页选择器 */

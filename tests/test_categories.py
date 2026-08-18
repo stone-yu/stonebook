@@ -14,6 +14,7 @@ from webserver.models import (
 )
 from webserver.services.categories import (
     CategoryError,
+    add_books_to_shelf,
     assign_book,
     assign_library_path,
     build_tree,
@@ -151,6 +152,32 @@ def test_shelf_inherits_global_path_and_allows_multiple_categories(session):
     links = session.query(ShelfCategoryBook).filter(ShelfCategoryBook.reader_id == 1).all()
     assert inherited.name == "鲁迅"
     assert {link.category_id for link in links} == {inherited.id, extra.id}
+
+
+def test_category_books_are_added_to_shelf_with_paths_and_idempotency(session):
+    assign_library_path(session, 101, ["文学", "中国文学"])
+    assign_library_path(session, 102, ["文学", "外国文学"])
+
+    first = add_books_to_shelf(session, 1, [101, 102])
+    second = add_books_to_shelf(session, 1, [101, 102])
+
+    states = session.query(ReadingState).filter(ReadingState.reader_id == 1, ReadingState.wants == 1).all()
+    links = session.query(ShelfCategoryBook).filter(ShelfCategoryBook.reader_id == 1).all()
+    assert first == {"total": 2, "added": 2, "skipped": 0}
+    assert second == {"total": 2, "added": 0, "skipped": 2}
+    assert {state.book_id for state in states} == {101, 102}
+    assert {link.category.name for link in links} == {"中国文学", "外国文学"}
+
+
+def test_category_bulk_shelf_only_changes_requested_books(session):
+    assign_library_path(session, 101, ["文学"])
+    assign_library_path(session, 102, ["技术"])
+
+    result = add_books_to_shelf(session, 1, [101])
+
+    assert result["total"] == 1
+    assert session.query(ReadingState).filter(ReadingState.reader_id == 1, ReadingState.wants == 1).count() == 1
+    assert session.query(ShelfCategoryBook).filter(ShelfCategoryBook.reader_id == 1).one().book_id == 101
 
 
 def test_removing_book_from_shelf_clears_only_links(session):

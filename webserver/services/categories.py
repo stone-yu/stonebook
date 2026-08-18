@@ -114,6 +114,52 @@ def inherit_library_path(session, reader_id, book_id):
     return category
 
 
+def add_books_to_shelf(session, reader_id, book_ids):
+    book_ids = list(dict.fromkeys(int(book_id) for book_id in book_ids))
+    if not book_ids:
+        return {"total": 0, "added": 0, "skipped": 0}
+
+    states = {
+        state.book_id: state
+        for state in session.query(ReadingState)
+        .filter(ReadingState.reader_id == reader_id, ReadingState.book_id.in_(book_ids))
+        .all()
+    }
+    library_links = {
+        link.book_id: link
+        for link in session.query(LibraryBookCategory).filter(LibraryBookCategory.book_id.in_(book_ids)).all()
+    }
+    shelf_links = {
+        (link.category_id, link.book_id)
+        for link in session.query(ShelfCategoryBook)
+        .filter(ShelfCategoryBook.reader_id == reader_id, ShelfCategoryBook.book_id.in_(book_ids))
+        .all()
+    }
+
+    added = 0
+    for book_id in book_ids:
+        state = states.get(book_id)
+        if state is None:
+            state = ReadingState(book_id, reader_id)
+            session.add(state)
+            states[book_id] = state
+        if not state.is_wants():
+            state.set_wants(True)
+            added += 1
+
+        library_link = library_links.get(book_id)
+        if library_link is None:
+            continue
+        category = ensure_path(session, ShelfCategory, node_path(session, library_link.category), reader_id)
+        key = (category.id, book_id)
+        if key not in shelf_links:
+            session.add(ShelfCategoryBook(reader_id=reader_id, category_id=category.id, book_id=book_id))
+            shelf_links.add(key)
+
+    session.commit()
+    return {"total": len(book_ids), "added": added, "skipped": len(book_ids) - added}
+
+
 def remove_book_from_shelf_categories(session, reader_id, book_id):
     session.query(ShelfCategoryBook).filter(
         ShelfCategoryBook.reader_id == reader_id, ShelfCategoryBook.book_id == book_id

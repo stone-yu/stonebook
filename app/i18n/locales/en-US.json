@@ -388,7 +388,12 @@
     "organizeBook": "Organize {title}",
     "personalCategories": "Personal categories",
     "moveBook": "Change category",
-    "moveBookTitle": "Change category for {title}"
+    "moveBookTitle": "Change category for {title}",
+    "addToShelf": "Add to shelf",
+    "addCategoryToShelf": "Add category {name} to shelf",
+    "addCategoryTitle": "Add category to shelf",
+    "addCategoryConfirm": "Add {count} books from “{name}” and its subcategories to your shelf. Existing books will be skipped.",
+    "addCategorySuccess": "Added {added} books and skipped {skipped}"
   },
   "user": {
     "history": {
@@ -645,8 +650,13 @@
       "button": {
         "refresh": "Refresh",
         "autoUpdateBookInfo": "Auto Update Book Info...",
-        "bulkDelete": "Delete Selected"
+        "bulkDelete": "Delete Selected",
+        "batchCover": "Change Covers",
+        "uploadCovers": "Upload Covers"
       },
+      "batchCoverTitle": "Change Covers",
+      "batchCoverSubtitle": "Choose an individual cover for each of {count} selected books",
+      "batchCoverSelected": "Selected {selected}/{total} covers",
       "label": {
         "search": "Search",
         "title": "Title",
@@ -676,7 +686,9 @@
         "operationIrreversible": "This operation is irreversible, cannot be recovered after deletion",
         "selectBooksFirst": "Please select books to operate on first",
         "coverSizeLimit": "Cover image size cannot exceed 5MB",
-        "selectCoverFirst": "Please select a cover image to upload first"
+        "selectCoverFirst": "Please select a cover image to upload first",
+        "batchCoverSuccess": "Updated covers for {count} books",
+        "batchCoverPartial": "Cover update complete: {succeeded} succeeded and {failed} failed"
       },
       "status": {
         "ready": "Ready",
