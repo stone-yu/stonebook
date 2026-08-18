@@ -22,6 +22,11 @@ def setUpModule():
 class AudiobookFixture:
     def setUp(self):
         super().setUp()
+        # 有声书默认关闭（生产镜像移除），有声书测试走启用路径；保持 runner 关闭
+        # 避免后台 worker 线程与断言竞争（AUDIOBOOK_RUNNER_ENABLED=False 见 test_main.setup_server）。
+        enabled = mock.patch.dict(main.CONF, {"AUDIOBOOK_ENABLED": True})
+        enabled.start()
+        self.addCleanup(enabled.stop)
         session = test_main.get_db()
         for model in (
             models.PodcastAccessLog,
@@ -931,6 +936,14 @@ description: 高级模式测试
         session.add(job)
         session.commit()
         scheduler = AudiobookScheduler()
+        # 测试中 AUDIOBOOK_RUNNER_ENABLED=False，AudiobookScheduler.setup() 跳过了
+        # storage/worker_id/_last_maintenance 的初始化；run_once() 依赖这些属性，
+        # 这里在不启动 worker 线程的前提下补齐（与启用 runner 走同一路径）。
+        if not hasattr(scheduler, "storage"):
+            scheduler.storage = AudiobookStorage()
+            scheduler.storage.ensure()
+            scheduler.worker_id = "test-worker"
+            scheduler._last_maintenance = 0.0
         with mock.patch.object(scheduler, "_process") as process:
             self.assertTrue(scheduler.run_once())
             process.assert_called_once_with(job.id)
