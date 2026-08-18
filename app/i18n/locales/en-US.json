@@ -550,10 +550,11 @@
   "discover": {
     "eyebrow": "Search and discover",
     "title": "What would you like to read?",
-    "subtitle": "Start with your own library or discover something new online.",
+    "subtitle": "Search by keyword, or browse from the entries above.",
     "placeholder": "Search title, author, ISBN, or tag",
     "localDescription": "Browse every book already organized in your library",
     "networkDescription": "Discover and save books from configured sources",
+    "categoryDescription": "Browse all books by nested categories",
     "refineEyebrow": "Narrow it down",
     "refineTitle": "Browse in a familiar way",
     "back": "Back to Find Books",
@@ -652,13 +653,16 @@
         "autoUpdateBookInfo": "Auto Update Book Info...",
         "bulkDelete": "Delete Selected",
         "batchCover": "Change Covers",
-        "uploadCovers": "Upload Covers"
+        "uploadCovers": "Upload Covers",
+        "categoryManage": "Manage Categories"
       },
       "batchCoverTitle": "Change Covers",
-      "batchCoverSubtitle": "Choose an individual cover for each of {count} selected books",
-      "batchCoverSelected": "Selected {selected}/{total} covers",
+      "batchCoverSubtitle": "Pick one cover to apply to all {count} selected books",
+      "batchCoverSelected": "Will apply to {total} selected books",
       "label": {
         "search": "Search",
+        "category": "Category",
+        "allCategories": "All categories",
         "title": "Title",
         "authors": "Authors",
         "rating": "Rating",

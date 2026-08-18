@@ -13,13 +13,12 @@
                     :title="t('category.libraryTitle')"
                     :tree="tree"
                     :selected-id="selectedId"
-                    :manageable="Boolean(store.user.is_admin)"
+                    :manageable="false"
                     show-uncategorized
                     :uncategorized-count="uncategorizedCount"
                     :shelfable="Boolean(store.user.is_login)"
                     :shelf-loading-id="shelfLoadingId"
                     @select="selectCategory"
-                    @operate="operate"
                     @add-to-shelf="openShelfDialog"
                 />
             </template>
@@ -57,47 +56,11 @@
                             <v-card-subtitle class="text-truncate px-2">
                                 {{ book.title }}
                             </v-card-subtitle>
-                            <v-card-actions v-if="store.user.is_admin">
-                                <v-btn
-                                    size="small"
-                                    block
-                                    prepend-icon="mdi-folder-move"
-                                    @click="editBook(book)"
-                                >
-                                    {{ t('category.moveBook') }}
-                                </v-btn>
-                            </v-card-actions>
                         </v-card>
                     </v-col>
                 </v-row>
             </template>
         </BookBrowseLayout>
-        <v-dialog
-            v-model="bookDialog"
-            max-width="500"
-        >
-            <v-card>
-                <v-card-title>{{ t('category.moveBookTitle', { title: activeBook?.title || '' }) }}</v-card-title><v-card-text>
-                    <v-select
-                        v-model="bookCategoryId"
-                        :items="categoryOptions"
-                        item-title="title"
-                        item-value="value"
-                        :label="t('category.libraryTitle')"
-                        clearable
-                    />
-                </v-card-text><v-card-actions>
-                    <v-spacer /><v-btn @click="bookDialog = false">
-                        {{ t('common.cancel') }}
-                    </v-btn><v-btn
-                        color="primary"
-                        @click="saveBookCategory"
-                    >
-                        {{ t('common.save') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
         <v-dialog
             v-model="shelfDialog"
             max-width="480"
@@ -148,18 +111,11 @@ const uncategorizedCount = ref(0);
 const error = ref('');
 const loading = ref(false);
 const assignments = ref({});
-const bookDialog = ref(false);
-const activeBook = ref(null);
-const bookCategoryId = ref(null);
 const shelfDialog = ref(false);
 const shelfCategory = ref(null);
 const shelfLoadingId = ref(null);
 
 const flatten = nodes => nodes.flatMap(node => [node, ...flatten(node.children || [])]);
-const categoryOptions = computed(() => flatten(tree.value).map(node => ({
-    title: `${'— '.repeat(Math.max(0, node.depth - 1))}${node.name}`,
-    value: node.id,
-})));
 const sortedBooks = computed(() => sortCategoryBooks(books.value, assignments.value, tree.value));
 const selectedTitle = computed(() => {
     if (selectedId.value === null) return t('category.allBooks');
@@ -190,23 +146,6 @@ async function loadBooks() {
     }
 }
 function selectCategory(id) { selectedId.value = id; loadBooks(); }
-async function operate(payload) {
-    const rsp = await $backend('/admin/categories', { method: 'POST', body: JSON.stringify(payload) });
-    if (rsp.err !== 'ok') error.value = rsp.msg;
-    else { error.value = ''; await loadTree(); await loadBooks(); }
-}
-function editBook(book) {
-    activeBook.value = book;
-    bookCategoryId.value = assignments.value[String(book.id)] || assignments.value[book.id] || null;
-    bookDialog.value = true;
-}
-async function saveBookCategory() {
-    const payload = bookCategoryId.value
-        ? { action: 'assign', category_id: bookCategoryId.value, book_id: activeBook.value.id }
-        : { action: 'unassign', book_id: activeBook.value.id };
-    await operate(payload);
-    bookDialog.value = false;
-}
 function openShelfDialog(category) {
     shelfCategory.value = category;
     shelfDialog.value = true;

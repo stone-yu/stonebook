@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="找书页顶部入口重组、分类导览改只读、图书管理承接分类筛选与 CRUD、统一批量封面方案。" />
+<link rel="icon" href="data:," />
+<title>找书入口重组与分类管理集中化 · ACTIVE</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;color:#26324a;background:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0}
+main{width:min(980px,calc(100% - 32px));margin:32px auto}
+header,section{margin-bottom:18px;padding:24px;border:1px solid #dbe3ed;border-radius:18px;background:#fff}
+h1,h2{margin-top:0}
+h2{font-size:19px}
+p,li{line-height:1.7}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.meta span{padding:5px 10px;border-radius:999px;background:#e8f3ee;font-size:13px}
+code{padding:2px 5px;border-radius:5px;background:#edf2f7;font-size:13px}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th,td{padding:9px;border:1px solid #dbe3ed;text-align:left;vertical-align:top;font-size:14px}
+.note{padding:12px 16px;border-radius:12px;background:#fff7e6;border:1px solid #ffe2a8;font-size:14px}
+.risk{padding:12px 16px;border-radius:12px;background:#fdecea;border:1px solid #f5c2c7;font-size:14px}
+@media(max-width:600px){main{width:calc(100% - 20px);margin:10px auto}header,section{padding:18px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>找书入口重组与分类管理集中化</h1>
+<p>把分类导览、本地书库、网络书库三个入口提到找书页最顶部；让分类导览页回归纯浏览；把分类筛选与分类 CRUD 集中到图书管理页，并将批量封面从逐本设置改为统一一张封面应用到全部选中书。</p>
+<div class="meta">
+<span>状态：ACTIVE</span>
+<span>创建日期：2026-08-18</span>
+<span>所属模块：app</span>
+<span>影响范围：app/pages、app/components、app/utils、app/i18n、webserver/handlers、tests</span>
+<span>需求来源：用户原话 + grill 澄清</span>
+</div>
+</header>
+
+<section>
+<h2>1. 原始诉求</h2>
+<ol>
+<li>找书下面的分类导览，和本地书库、网络书库三个网格放到找书页面顶部。</li>
+<li>找书的分类导览页面，左侧分类不可编辑。</li>
+<li>图书管理增加分类筛选，方便基于分类进行批量管理；批量修改封面不是每本单独设置封面，而是选中的图书统一改成一张封面。</li>
+</ol>
+<p class="note"><strong>grill 澄清结论</strong>：① 三网格置于 <code>/discover</code> 最顶部（hero 下移）；② 分类 CRUD 从 <code>/categories</code> 迁移到图书管理页展示，浏览页纯只读；③ 按分类批量仅当前页全选，不做跨页整类全选；④ 统一封面来源为单文件上传。</p>
+</section>
+
+<section>
+<h2>2. 目标</h2>
+<ul>
+<li><code>/discover</code> 首屏即分类导览/本地书库/网络书库三个入口卡片，搜索框下移但仍可用。</li>
+<li><code>/categories</code> 成为纯浏览页：左侧分类树与单本归类操作全部只读。</li>
+<li><code>/admin/books</code> 承接分类筛选、分类 CRUD 管理与统一批量封面，成为分类相关操作的唯一管理入口。</li>
+</ul>
+</section>
+
+<section>
+<h2>3. 方案</h2>
+
+<h2>3.1 找书页入口重组（<code>app/pages/discover.vue</code>）</h2>
+<p>原结构：hero（标题+搜索框）→ source-grid（本地/网络 2 卡）→ filter-grid（9 项，分类导览是其中之一）。</p>
+<p>改造后顺序：<strong>entry-grid（3 卡）→ hero（标题+搜索）→ filter-grid（8 项）</strong>。</p>
+<ul>
+<li>新增顶部 <code>entry-grid</code>：分类导览→<code>/categories</code>（<code>mdi-widgets</code>）、本地书库→<code>/library</code>（<code>mdi-bookshelf</code>）、网络书库→<code>/network</code>（<code>mdi-cloud-search</code>，受 <code>store.sys.show_network_library !== false</code> 控制隐藏）。</li>
+<li>将原 source-grid 的本地/网络两卡并入 entry-grid；从 filter-grid 移除分类导览项（剩作者/出版社/标签/文件格式/丛书/评分/热门/最近 8 项）。</li>
+<li>hero 下移到 entry-grid 之下，<code>discover.subtitle</code> 改写避免与三卡文案重复；新增 <code>discover.categoryDescription</code> 作为分类导览卡片描述。</li>
+<li>响应式：3 列桌面 / 2 列平板 / 1 列移动；同时把原先未注册的 <code>mdi-cloud-search-outline</code>/<code>mdi-tag-outline</code>/<code>mdi-file-outline</code> 换为已注册的 <code>mdi-cloud-search</code>/<code>mdi-tag</code>/<code>mdi-file</code>。</li>
+</ul>
+
+<h2>3.2 分类导览页改只读（<code>app/pages/categories.vue</code>）</h2>
+<ul>
+<li><code>:manageable</code> 由 <code>Boolean(store.user.is_admin)</code> 改为 <code>false</code>，隐藏左侧"新增一级分类"与新增子分类/重命名/移动/合并/删除工具条及对应对话框。</li>
+<li>移除右侧每本"调整分类"按钮及其 moveBook 对话框，使整页纯浏览；删除随之无用的 <code>editBook</code>/<code>saveBookCategory</code>/<code>operate</code>/<code>categoryOptions</code> 等状态与函数。</li>
+<li>保留加入书架（<code>shelfable</code>）等用户侧能力；<code>CategoryTreePanel.vue</code> 组件本身不改。</li>
+</ul>
+
+<h2>3.3 图书管理分类筛选 + 分类 CRUD（<code>app/pages/admin/books.vue</code> + <code>webserver/handlers/admin.py</code>）</h2>
+<ul>
+<li>工具条新增"分类管理"按钮（<code>mdi-widgets</code>）打开<strong>分类管理对话框</strong>，内嵌 <code>CategoryTreePanel</code>（<code>:manageable="true"</code>）：选择分类即设置筛选并刷新表格；CRUD 工具条走 <code>POST /api/admin/categories</code>，完成后刷新分类树。</li>
+<li>工具条同步新增分类筛选 <code>v-select</code>（扁平化分类树，带缩进）+"包含子分类"开关，与对话框选择联动；当前所选分类以 chip/可清除展示。</li>
+<li>表格新增"分类"列（取 <code>GET /api/categories</code> 的 <code>book_categories</code> 映射），单元格可点击打开单本"调整分类"对话框，承接从 <code>/categories</code> 迁来的单本归类能力。</li>
+<li>后端 <code>AdminBookList.get</code> 新增 <code>category_id</code>、<code>recursive</code> 查询参数：存在 <code>category_id</code> 时，用 <code>webserver.services.categories.category_book_ids(...)</code> 取该分类书 ID 集合与 <code>all_ids</code> 取交集；<code>category_id=0</code> 表示未分类（排除已分配书）；无 <code>category_id</code> 时行为完全不变。</li>
+</ul>
+
+<h2>3.4 统一批量封面（<code>app/pages/admin/books.vue</code> + <code>app/utils/batch-covers.ts</code>）</h2>
+<ul>
+<li>批量封面对话框：移除逐本 <code>v-file-input</code> 列表，改为<strong>单个 <code>v-file-input</code></strong> + 进度条；<code>batchCoverSubtitle</code> 改为"选择一张封面，应用到全部选中的 {count} 本书"。</li>
+<li>新增工具函数 <code>uploadOneCoverToBooks(file, bookIds, backend, onProgress)</code>：循环将<strong>同一</strong> <code>file</code> 以 <code>cover</code> 字段 <code>POST</code> 到 <code>/book/{id}/edit</code>，复用现有 <code>BookEdit.upload_cover</code> 校验与写入；单本失败不阻断，汇总成功与失败。删除原逐本 <code>uploadBookCovers</code>。</li>
+<li>后端 <code>POST /api/book/{id}/edit</code> → <code>BookEdit.upload_cover</code> <strong>无需改动</strong>。</li>
+</ul>
+
+<h2>3.5 图标注册（<code>app/utils/local-mdi-icons.ts</code>）</h2>
+<p>新增 6 个本地图标以让复用的 <code>CategoryTreePanel</code> CRUD 与找书评分入口正常渲染：<code>mdi-call-merge</code>、<code>mdi-folder-move</code>、<code>mdi-folder-outline</code>、<code>mdi-folder-plus</code>、<code>mdi-folder-question</code>、<code>mdi-star-outline</code>。</p>
+</section>
+
+<section>
+<h2>4. 数据与接口</h2>
+<table>
+<tr><th>能力</th><th>接口</th><th>说明</th></tr>
+<tr><td>分类树与映射</td><td><code>GET /api/categories</code></td><td>返回 tree 与 book_categories（book_id→category_id），用于筛选 v-select 与表格分类列。</td></tr>
+<tr><td>分类 CRUD</td><td><code>POST /api/admin/categories</code></td><td>action=create/update/merge/delete/assign/unassign，对话框工具条复用。</td></tr>
+<tr><td>带分类筛选的书目列表</td><td><code>GET /api/admin/book/list</code></td><td><strong>新增</strong> <code>category_id</code>、<code>recursive</code> 参数；其余参数与分页/排序不变。</td></tr>
+<tr><td>单本/统一封面</td><td><code>POST /api/book/{id}/edit</code></td><td>multipart 字段 <code>cover</code>；统一封面循环复用同一文件，后端不改。</td></tr>
+</table>
+</section>
+
+<section>
+<h2>5. 测试结果</h2>
+<ul>
+<li><strong>前端单测</strong>：<code>npx vitest run test/utils/batch-covers.spec.ts test/components/CategoryTreePanel.spec.ts</code> — 6 项通过（统一封面 3 项：同一文件应用到全部、部分失败汇总、非数字 ID 过滤；CategoryTreePanel 3 项：嵌套渲染、manageable 显隐、加入书架事件隔离）。</li>
+<li><strong>前端全量单测</strong>：<code>npx vitest run test/components test/utils</code> — 102 项通过，4 文件失败，均与本次改动无关：① <code>LocalMdiIcons.spec.ts</code>（9 个未注册图标，均位于本次未触及文件：AppHeader、主题、index/more/shelf/history、FacetListPanel；本次改动将其缺失数从 18 降至 9，未引入新缺失）；② <code>AppPress/Upload/BookSourceImportDialog</code>（Nuxt i18n <code>#build/i18n-options.mjs</code> 在 happy-dom 测试环境无法解析，与 locale 内容无关；两份 locale JSON 均通过 <code>python3 -m json.tool</code> 校验，新增 key 无 <code>@</code>/<code>&lt;</code> 字面量）。</li>
+<li><strong>前端 lint</strong>：<code>npm run lint</code> — 0 error，192 warning（与仓库既有基线一致，本次未新增 error）。</li>
+<li><strong>前端构建</strong>：<code>npm run build</code> — 通过（Nuxt SSR 构建成功，所有改动页面/组件编译通过）。</li>
+<li><strong>后端语法</strong>：<code>python3 -m py_compile webserver/handlers/admin.py tests/test_admin.py</code> — 通过。</li>
+<li><strong>后端单测（部分）</strong>：<code>tests/test_categories.py</code> — 16 项通过（纯内存 session，不依赖 calibre）。</li>
+<li class="risk"><strong>后端 <code>test_admin.py</code>（受环境限制未实跑）</strong>：<code>tests/test_admin.py</code>（含新增 <code>TestAdminBookListCategoryFilter</code> 3 用例）依赖 calibre。后端按 <code>scripts/dev_local.py</code> 在 <code>calibre-debug</code> 下运行；plain venv pytest <code>import calibre</code> 失败，改用 <code>calibre-debug</code> 跑 pytest 时 macOS 代码签名阻止加载 venv 的 <code>bcrypt</code> 原生扩展（Team ID 不一致）。故 <code>test_admin.py</code> 未实跑；<code>python3 -m py_compile webserver/handlers/admin.py tests/test_admin.py</code> 通过。<strong>风险</strong>：分类筛选运行时逻辑未经实际 HTTP 测试（逻辑镜像既有 <code>LibraryCategoryBooks</code> 的 <code>category_book_ids</code> 用法）。<strong>建议</strong>：Docker 环境执行 <code>make test</code> 或在已正确签名的本地环境执行 <code>.venv/bin/python -m pytest tests/test_admin.py::TestAdminBookListCategoryFilter</code> 验证后再依赖。</li>
+<li class="risk"><strong>浏览器/Docker 验收（受环境限制未执行）</strong>：本环境 Docker daemon 不可用，无法启动真实后端做页面验收。<strong>建议</strong>：<code>make dev</code> 启动后端（确认 <code>http://127.0.0.1:8080/api/welcome</code>）后 <code>API_URL=http://127.0.0.1:8080 npx nuxt dev --port 3000</code>，验证 /discover 三网格置顶与响应式、/categories 只读、/admin/books 分类筛选+CRUD 对话框+统一批量封面。</li>
+</ul>
+</section>
+
+<section>
+<h2>6. 影响范围与关联</h2>
+<ul>
+<li>影响：<code>app/pages/discover.vue</code>、<code>app/pages/categories.vue</code>、<code>app/pages/admin/books.vue</code>、<code>app/utils/batch-covers.ts</code>、<code>app/utils/local-mdi-icons.ts</code>、<code>app/i18n/locales/zh-CN.json</code> 与 <code>en-US.json</code>、<code>webserver/handlers/admin.py</code>、<code>tests/test_admin.py</code>、<code>app/test/utils/batch-covers.spec.ts</code>。<code>CategoryTreePanel.vue</code> 仅调用方改，组件本身不变。</li>
+<li>关联：本方案细化 <code>design/app/20260818-library-batch-management.active.html</code> 的"批量封面"口径（由逐本改为统一一张应用到全部选中书）；其"分类批量入架"与"默认排序"不变。该关联已在正文 3.4 注明。</li>
+<li>关联：<code>design/app/20260817-unified-facet-book-browsing.active.html</code> 的双栏布局仍由 <code>/categories</code> 等维度页沿用，本方案不改其布局，仅切换 <code>manageable</code>。</li>
+</ul>
+</section>
+
+<section>
+<h2>7. 风险与边界</h2>
+<ul>
+<li><code>/categories</code> 移除 CRUD 后，管理员分类管理唯一入口迁至 <code>/admin/books</code> 对话框；需保证对话框对所有管理员可见且 CRUD 可达（由 <code>CategoryTreePanel :manageable="true"</code> 与 <code>POST /api/admin/categories</code> 的 <code>@is_admin</code> 保证）。</li>
+<li><code>AdminBookList</code> 增参必须保持无 <code>category_id</code> 时行为不变（向后兼容），并沿用现有管理员校验；已由 <code>if category_id != ""</code> 分支保证。</li>
+<li>统一封面循环上传对大量选中书耗时，须有进度条与失败汇总，且单本失败不阻断其余（已实现）。</li>
+<li>批量按分类仅当前页全选：大分类需逐页操作，已在 grill 中确认为可接受。</li>
+<li>后端分类筛选与浏览器验收受环境限制未实跑，见第 5 节风险条。</li>
+</ul>
+</section>
+</main>
+</body>
+</html>

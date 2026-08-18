@@ -31,6 +31,51 @@ class TestAdmin(TestWithUserLogin):
         self.assertEqual(len(d["items"]), 10)
 
 
+class TestAdminBookListCategoryFilter(TestWithAdminUser):
+    """分类筛选参数 (category_id / recursive) 过滤管理员书单。"""
+
+    def _post(self, payload):
+        return self.json("/api/admin/categories", method="POST", body=json.dumps(payload))
+
+    def _list(self, category_id, recursive=True):
+        recursive_arg = "true" if recursive else "false"
+        url = "/api/admin/book/list?sort=id&num=0&category_id=%s&recursive=%s" % (category_id, recursive_arg)
+        return self.json(url)
+
+    def _cleanup(self, cid):
+        self._post({"action": "unassign", "book_id": BID_EPUB})
+        self._post({"action": "delete", "category_id": cid})
+
+    def test_category_filter_returns_only_assigned_books(self):
+        d = self._post({"action": "create", "name": "分类过滤测试"})
+        self.assertEqual(d["err"], "ok")
+        cid = d["category"]["id"]
+        try:
+            self.assertEqual(self._post({"action": "assign", "category_id": cid, "book_id": BID_EPUB})["err"], "ok")
+            result = self._list(cid, recursive=True)
+            self.assertEqual(result["err"], "ok")
+            ids = [book["id"] for book in result["items"]]
+            self.assertEqual(ids, [BID_EPUB])
+        finally:
+            self._cleanup(cid)
+
+    def test_recursive_false_lists_direct_members(self):
+        d = self._post({"action": "create", "name": "分类递归测试"})
+        self.assertEqual(d["err"], "ok")
+        cid = d["category"]["id"]
+        try:
+            self._post({"action": "assign", "category_id": cid, "book_id": BID_EPUB})
+            result = self._list(cid, recursive=False)
+            self.assertEqual(result["err"], "ok")
+            self.assertEqual([book["id"] for book in result["items"]], [BID_EPUB])
+        finally:
+            self._cleanup(cid)
+
+    def test_invalid_category_id_returns_params_error(self):
+        d = self.json("/api/admin/book/list?category_id=abc&num=0")
+        self.assertEqual(d["err"], "params.error")
+
+
 class TestAdminPrivateBookResources(TestWithAdminUser):
     def test_private_book_cover_uses_authenticated_origin_when_static_host_is_set(self):
         with temporary_book_scope(BID_EPUB, "private", collector_id=2):
