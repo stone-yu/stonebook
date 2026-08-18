@@ -60,22 +60,27 @@ fi
 
 # 系统运行目录必须在 supervisord 前可用；持久化目录的递归属主修复与原子写入
 # 校验由 webserver/self_check.py 负责，以便失败时进入可见状态页。
-chown talebook:talebook /var/www/talebook/app
-chown -R talebook:talebook \
-  /run/talebook \
-  /data/ssl \
-  /data/log/ \
-  /data/calibre \
-  /var/lib/nginx \
-  /var/log/nginx \
-  /root/.npm \
-  /var/www/talebook/app/.env \
-  /var/www/talebook/app/dist \
-  /var/www/talebook/webserver \
-  /var/www/talebook/server.py \
-  /var/www/talebook/status \
-  /usr/lib/calibre \
-  /usr/share/calibre
+#
+# 冷启动优化：PUID=0 时 talebook 被 usermod 成 uid=0（即 root），此时所有
+# 文件本就是 root:root，"chown -R talebook:talebook" 是把 root 文件改成
+# root 的空操作，却要遍历 /usr/lib/calibre、/var/www/talebook 等上万个
+# inode——在机械盘/NAS 冷启动时导致 supervisord 迟迟无法启动（实测可卡
+# 十几分钟）。PUID=0 时直接跳过整个 chown 块；非 root 时仅对真正需要写的
+# 运行目录递归 chown，不再对只读的 calibre/前端构建产物等程序目录做无脑
+# 递归（它们由镜像构建时定为 root:root 且对所有用户可读，无需改属主）。
+if [ "${PUID}" != "0" ]; then
+  chown talebook:talebook /var/www/talebook/app
+  chown -R talebook:talebook \
+    /run/talebook \
+    /data/ssl \
+    /data/log/ \
+    /data/calibre \
+    /var/lib/nginx \
+    /var/log/nginx \
+    /root/.npm \
+    /var/www/talebook/app/.env \
+    /var/www/talebook/status
+fi
 
 if [ -f /data/ssl/ssl.crt ]; then
   chmod 0644 /data/ssl/ssl.crt
