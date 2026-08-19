@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Talebook 内部方案模板：用于记录原始诉求、目标边界、实现方案、风险与测试结果。" />
     <link rel="icon" href="data:," />
-    <title>书架分类批量移出书架 · WIP</title>
+    <title>书架分类批量移出书架 · ACTIVE</title>
     <style>
       :root {
         color-scheme: light;
@@ -199,7 +199,7 @@
         <h1>书架分类批量移出书架</h1>
         <p class="sub">在书架页分类树每个（子）分类节点旁增加"移出书架"操作，按当前 recursive 开关把该分类下的书籍批量取消收藏（移出书架），作为现有"加入书架"批量接口的反向镜像。</p>
         <div class="chips" aria-label="方案元信息">
-          <span class="chip wip">状态：WIP</span>
+          <span class="chip active">状态：ACTIVE</span>
           <span class="chip">创建日期：2026-08-19</span>
           <span class="chip">所属模块：app</span>
           <span class="chip">影响范围：书架页、分类树组件、书架分类接口、书架分类服务</span>
@@ -281,13 +281,13 @@ def remove_books_from_shelf(session, reader_id, book_ids):
                 <tbody>
                   <tr><td>组件</td><td><code>npx vitest run test/components/CategoryTreePanel.spec.ts</code></td><td>removable 且 count 大于 0 时渲染”移出书架”按钮，点击 emit remove-from-shelf 并携带节点；空分类不渲染</td><td class=”verified”>通过（本地 5/5）</td></tr>
                   <tr><td>服务层</td><td><code>.venv/bin/python -m pytest tests/test_categories.py</code></td><td>remove_books_from_shelf 清 membership+links、幂等、保留其它书（镜像 add_books_to_shelf）</td><td class=”verified”>通过（本地 19/19）</td></tr>
-                  <tr><td>集成 HTTP</td><td><code>pytest tests/test_reading_state.py::TestShelfCategoryRemove</code>（CI/Docker）</td><td>POST /api/shelf/categories/{id}/remove 返回 ok+计数；/api/shelf 不再含该书；非 owner 返回 not_found</td><td class=”pending”>待验证（CI；本机无 calibre）</td></tr>
-                  <tr><td>实际渲染</td><td>Docker 后端 + Nuxt dev 书架页</td><td>选中子分类→点移出书架→确认→列表与计数刷新、toast 显示数量</td><td class=”pending”>待验证（CI/Docker；本机无 Docker）</td></tr>
-                  <tr><td>质量门禁</td><td><code>ruff check webserver/...</code>（通过）；<code>npx eslint</code> 改动文件（通过）；<code>make check-design</code></td><td>ruff/eslint 无新增错误；check-design 因 WIP 阻塞合并，待转 ACTIVE 后通过</td><td class=”pending”>部分通过（WIP 待转 ACTIVE）</td></tr>
+                  <tr><td>集成 HTTP</td><td><code>pytest tests/test_reading_state.py::TestShelfCategoryRemove</code>（CI）</td><td>POST /api/shelf/categories/{id}/remove 返回 ok+计数；/api/shelf 不再含该书；非 owner 返回 not_found</td><td class=”verified”>通过（CI 2/2；877 passed）</td></tr>
+                  <tr><td>实际渲染</td><td>Docker 后端 + Nuxt dev 书架页</td><td>选中子分类→点移出书架→确认→列表与计数刷新、toast 显示数量</td><td class=”pending”>受限（本机无 Docker；已用组件测试 + test-ui Nuxt build 替代；真实渲染待后续本地 Docker 体验）</td></tr>
+                  <tr><td>质量门禁</td><td><code>make check-design</code> / <code>make lint-py</code>(ruff) / <code>cd app &amp;&amp; npm run lint</code>+build</td><td>路径/状态/结构通过；ruff、eslint、Nuxt build 无新增错误（CI test-ui 通过）</td><td class=”verified”>通过（check-design 转 ACTIVE 后通过）</td></tr>
                 </tbody>
               </table>
             </div>
-            <div class=”callout warn”><strong>WIP 阶段说明：</strong>本机无 Docker/calibre，后端 pytest 与实际渲染待 CI 或本地 Docker 验证；前端 vitest 与 eslint 本地可跑。完成后回写真实命令与结果，未执行项不写成已通过。</div>
+            <div class=”callout good”><strong>结果回写：</strong>服务层 19/19、组件 5/5 本地 TDD 通过；HTTP 端点 CI 通过（877 passed，TestShelfCategoryRemove 2/2）；test-ui（lint+Nuxt build）CI 通过；ruff webserver 通过。实际渲染受本机无 Docker 限制，以组件测试 + 构建替代，真实渲染待后续本地 Docker 体验。</div>
           </section>
 
           <!-- OPTIONAL：grill 结论、实现偏离或后续修订需要可追溯时保留。 -->
@@ -297,6 +297,7 @@ def remove_books_from_shelf(session, reader_id, book_ids):
               <li><strong>2026-08-19：</strong>grill 四项默认（移出语义=彻底移出书架、递归=沿用页面开关、确认=弹框、按钮=节点旁）由方案提出，用户回复"确认"采纳。</li>
               <li><strong>2026-08-19：</strong>端点用独立路由而非 ShelfCategoryTree 的 action，因该 handler 走单本 book_id 语义，不匹配批量。</li>
               <li><strong>2026-08-19：</strong>移出按钮复用现有 add-to-shelf 的 hover/计数范式，新增 removable 属性区分页面，避免污染 categories.vue 与 admin/books。</li>
+              <li><strong>2026-08-19：</strong>CI 验证通过（test-server pytest 877 passed 含 TestShelfCategoryRemove 2/2；test-ui lint+build 通过），方案由 WIP 转 ACTIVE。实际渲染受本机无 Docker 限制，以组件测试 + Nuxt build 替代。</li>
             </ol>
           </section>
         </main>
@@ -304,7 +305,7 @@ def remove_books_from_shelf(session, reader_id, book_ids):
       </div>
 
       <!-- REQUIRED：转 ACTIVE 时同步更新这里、title、顶部状态和文件名。 -->
-      <footer>Talebook internal design · app · WIP · 2026-08-19</footer>
+      <footer>Talebook internal design · app · ACTIVE · 2026-08-19</footer>
     </div>
     <script>
       (() => {
