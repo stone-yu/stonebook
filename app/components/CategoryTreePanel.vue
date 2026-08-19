@@ -70,6 +70,16 @@
                             :aria-label="t('category.addCategoryToShelf', { name: item.name })"
                             @click.stop="$emit('add-to-shelf', item)"
                         />
+                        <v-btn
+                            v-if="removable && item.count > 0"
+                            class="category-remove-action"
+                            icon="mdi-book-remove-outline"
+                            size="x-small"
+                            variant="text"
+                            color="error"
+                            :aria-label="t('category.removeCategoryFromShelf', { name: item.name })"
+                            @click.stop="$emit('remove-from-shelf', item)"
+                        />
                     </div>
                 </template>
             </v-list-item>
@@ -169,8 +179,9 @@ const props = defineProps({
     uncategorizedCount: { type: Number, default: 0 },
     shelfable: { type: Boolean, default: false },
     shelfLoadingId: { type: Number, default: null },
+    removable: { type: Boolean, default: false },
 });
-const emit = defineEmits(['select', 'operate', 'add-to-shelf']);
+const emit = defineEmits(['select', 'operate', 'add-to-shelf', 'remove-from-shelf']);
 const { t } = useI18n();
 const dialog = ref(false);
 const mode = ref('create');
@@ -215,18 +226,23 @@ function submit() {
 </script>
 
 <style scoped>
-.category-shelf-action {
+.category-shelf-action,
+.category-remove-action {
     opacity: 0;
     transition: opacity 160ms ease;
 }
 
 .category-tree-item:hover .category-shelf-action,
-.category-tree-item:focus-within .category-shelf-action {
+.category-tree-item:focus-within .category-shelf-action,
+.category-tree-item:hover .category-remove-action,
+.category-tree-item:focus-within .category-remove-action {
     opacity: 1;
 }
 
 @media (hover: none) {
-    .category-shelf-action {
+
+    .category-shelf-action,
+    .category-remove-action {
         opacity: 1;
     }
 }

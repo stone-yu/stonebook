@@ -168,6 +168,63 @@ class TestBookShelf(TestWithUserLogin):
         self.assertEqual(d["err"], "params.book.invalid")
 
 
+class TestShelfCategoryRemove(TestWithUserLogin):
+    def _clear_reading_state(self, book_id, reader_id=1):
+        from webserver.models import ReadingState
+
+        session = get_db()
+        state = (
+            session.query(ReadingState)
+            .filter(ReadingState.book_id == book_id, ReadingState.reader_id == reader_id)
+            .first()
+        )
+        if state:
+            session.delete(state)
+            session.commit()
+
+    def _shelf_book_ids(self):
+        d = self.json("/api/shelf")
+        self.assertEqual(d["err"], "ok")
+        return {book["id"] for book in d.get("books", [])}
+
+    def _shelf_category_post(self, payload):
+        return self.json("/api/shelf/categories", method="POST", body=json.dumps(payload))
+
+    def _create_shelf_category(self, name):
+        d = self._shelf_category_post({"action": "create", "name": name})
+        self.assertEqual(d["err"], "ok")
+        return d["category"]["id"]
+
+    def test_remove_category_removes_its_books_from_shelf(self):
+        self._clear_reading_state(BID_EPUB)
+        cid = self._create_shelf_category("批量移出测试")
+        try:
+            self.assertEqual(
+                self.json("/api/book/%d/shelf" % BID_EPUB, method="POST", body=json.dumps({"shelf": True}))["err"],
+                "ok",
+            )
+            self.assertEqual(
+                self._shelf_category_post({"action": "assign", "category_id": cid, "book_id": BID_EPUB})["err"],
+                "ok",
+            )
+            self.assertIn(BID_EPUB, self._shelf_book_ids())
+
+            d = self.json("/api/shelf/categories/%d/remove" % cid, method="POST", body=json.dumps({"recursive": True}))
+            self.assertEqual(d["err"], "ok")
+            self.assertEqual(d["total"], 1)
+            self.assertEqual(d["removed"], 1)
+            self.assertEqual(d["skipped"], 0)
+            self.assertNotIn(BID_EPUB, self._shelf_book_ids())
+        finally:
+            self._shelf_category_post({"action": "unassign", "category_id": cid, "book_id": BID_EPUB})
+            self._shelf_category_post({"action": "delete", "category_id": cid})
+            self._clear_reading_state(BID_EPUB)
+
+    def test_remove_nonexistent_category_returns_not_found(self):
+        d = self.json("/api/shelf/categories/99999/remove", method="POST", body=json.dumps({"recursive": True}))
+        self.assertEqual(d["err"], "category.not_found")
+
+
 class TestBookReadingProgress(TestWithUserLogin):
     def _clear_reading_state(self, book_id, reader_id=1):
         from webserver.models import ReadingState

@@ -10,9 +10,11 @@
                     :tree="tree"
                     :selected-id="selectedId"
                     manageable
+                    :removable="viewMode === 'books'"
                     :show-uncategorized="viewMode === 'annotations'"
                     @select="selectCategory"
                     @operate="operate"
+                    @remove-from-shelf="removeFromShelf"
                 />
             </v-col>
             <v-col
@@ -211,6 +213,30 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <v-dialog
+            v-model="removeDialog"
+            max-width="420"
+        >
+            <v-card>
+                <v-card-title>{{ t('category.removeFromShelfTitle') }}</v-card-title>
+                <v-card-text>
+                    {{ t('category.removeFromShelfConfirm', { name: removeNode?.name || '' }) }}
+                    <span v-if="recursive">（{{ t('category.includeDescendants') }}）</span>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer /><v-btn @click="removeDialog = false">
+                        {{ t('common.cancel') }}
+                    </v-btn><v-btn
+                        color="error"
+                        :loading="removeLoading"
+                        @click="confirmRemoveFromShelf"
+                    >
+                        {{ t('common.confirm') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -296,6 +322,36 @@ async function saveBookCategories() {
     }
     bookDialog.value = false;
     await loadBooks();
+}
+
+const removeDialog = ref(false);
+const removeNode = ref(null);
+const removeLoading = ref(false);
+
+function removeFromShelf(node) {
+    removeNode.value = node;
+    removeDialog.value = true;
+}
+
+async function confirmRemoveFromShelf() {
+    if (!removeNode.value) {
+        return;
+    }
+    removeLoading.value = true;
+    const rsp = await $backend(`/shelf/categories/${removeNode.value.id}/remove`, {
+        method: 'POST',
+        body: JSON.stringify({ recursive: recursive.value }),
+    });
+    removeLoading.value = false;
+    removeDialog.value = false;
+    if (rsp.err !== 'ok') {
+        error.value = rsp.msg;
+        return;
+    }
+    error.value = '';
+    mainStore.setAlert({ type: 'success', msg: t('category.removedFromShelf', { removed: rsp.removed }) });
+    await loadTree();
+    await loadCurrent();
 }
 
 useHead({ title: () => t('shelf.pageTitle') });

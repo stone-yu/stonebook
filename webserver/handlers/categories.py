@@ -14,6 +14,7 @@ from webserver.services.categories import (
     create_category,
     delete_empty_category,
     merge_categories,
+    remove_books_from_shelf,
     serialize_category,
     unassign_book,
     update_category,
@@ -199,6 +200,21 @@ class ShelfCategoryBooks(BaseHandler):
         return {"err": "ok", "total": len(books), "books": books}
 
 
+class ShelfCategoryRemove(BaseHandler):
+    @js
+    @auth
+    def post(self, category_id):
+        reader_id = self.user_id()
+        category = self.session.get(ShelfCategory, int(category_id))
+        if category is None or category.reader_id != reader_id:
+            return {"err": "category.not_found", "msg": "分类不存在"}
+        data = request_json(self)
+        recursive = data.get("recursive", True) is not False
+        book_ids = category_book_ids(self.session, ShelfCategory, category.id, recursive, reader_id)
+        result = remove_books_from_shelf(self.session, reader_id, book_ids)
+        return {"err": "ok", **result}
+
+
 def routes():
     return [
         (r"/api/categories", LibraryCategoryTree),
@@ -207,4 +223,5 @@ def routes():
         (r"/api/admin/categories", LibraryCategoryAdmin),
         (r"/api/shelf/categories", ShelfCategoryTree),
         (r"/api/shelf/categories/([0-9]+)/books", ShelfCategoryBooks),
+        (r"/api/shelf/categories/([0-9]+)/remove", ShelfCategoryRemove),
     ]

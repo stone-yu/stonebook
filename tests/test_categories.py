@@ -24,6 +24,7 @@ from webserver.services.categories import (
     inherit_library_path,
     merge_categories,
     remove_book_from_shelf_categories,
+    remove_books_from_shelf,
     serialize_category,
     update_category,
 )
@@ -192,6 +193,43 @@ def test_removing_book_from_shelf_clears_only_links(session):
 
     assert session.query(ShelfCategoryBook).count() == 0
     assert session.get(ShelfCategory, category.id) is not None
+
+
+def test_remove_books_from_shelf_clears_membership_and_category_links(session):
+    assign_library_path(session, 101, ["文学", "中国文学"])
+    assign_library_path(session, 102, ["文学", "外国文学"])
+    add_books_to_shelf(session, 1, [101, 102])
+
+    result = remove_books_from_shelf(session, 1, [101, 102])
+
+    assert result == {"total": 2, "removed": 2, "skipped": 0}
+    assert session.query(ReadingState).filter(ReadingState.reader_id == 1, ReadingState.wants == 1).count() == 0
+    assert session.query(ShelfCategoryBook).filter(ShelfCategoryBook.reader_id == 1).count() == 0
+
+
+def test_remove_books_from_shelf_is_idempotent_for_already_removed_books(session):
+    assign_library_path(session, 101, ["文学"])
+    add_books_to_shelf(session, 1, [101])
+
+    first = remove_books_from_shelf(session, 1, [101])
+    second = remove_books_from_shelf(session, 1, [101])
+
+    assert first == {"total": 1, "removed": 1, "skipped": 0}
+    assert second == {"total": 1, "removed": 0, "skipped": 1}
+
+
+def test_remove_books_from_shelf_preserves_other_books_on_shelf(session):
+    assign_library_path(session, 101, ["文学"])
+    assign_library_path(session, 102, ["技术"])
+    add_books_to_shelf(session, 1, [101, 102])
+
+    result = remove_books_from_shelf(session, 1, [101])
+
+    assert result == {"total": 1, "removed": 1, "skipped": 0}
+    assert session.query(ReadingState).filter(ReadingState.book_id == 101, ReadingState.reader_id == 1).one().is_wants() is False
+    assert session.query(ReadingState).filter(ReadingState.book_id == 102, ReadingState.reader_id == 1).one().is_wants() is True
+    assert {link.book_id for link in session.query(ShelfCategoryBook).filter(ShelfCategoryBook.reader_id == 1).all()} == {102}
+
 
 
 def test_category_path_depth_is_limited(tmp_path):

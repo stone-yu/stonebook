@@ -68,4 +68,24 @@ describe('CategoryTreePanel.vue', () => {
         expect(wrapper.emitted('add-to-shelf')).toEqual([[expect.objectContaining({ id: 1 })]]);
         expect(wrapper.emitted('select')).toBeUndefined();
     });
+
+    it('emits a remove-from-shelf action when removable and the category has books', async () => {
+        const wrapper = mount(CategoryTreePanel, {
+            global: { plugins: [vuetify] },
+            props: { title: '分类', tree, removable: true },
+        });
+
+        await wrapper.get('[data-category-id="1"] .category-remove-action').trigger('click');
+        expect(wrapper.emitted('remove-from-shelf')).toEqual([[expect.objectContaining({ id: 1 })]]);
+        expect(wrapper.emitted('select')).toBeUndefined();
+    });
+
+    it('does not render a remove action for an empty category', () => {
+        const emptyTree = [{ id: 9, name: '空分类', depth: 1, count: 0, children: [] }];
+        const wrapper = mount(CategoryTreePanel, {
+            global: { plugins: [vuetify] },
+            props: { title: '分类', tree: emptyTree, removable: true },
+        });
+        expect(wrapper.find('[data-category-id="9"] .category-remove-action').exists()).toBe(false);
+    });
 });

@@ -392,6 +392,10 @@
     "addToShelf": "Add to shelf",
     "addCategoryToShelf": "Add category {name} to shelf",
     "addCategoryTitle": "Add category to shelf",
+    "removeCategoryFromShelf": "Remove category {name} from shelf",
+    "removeFromShelfTitle": "Remove from shelf",
+    "removeFromShelfConfirm": "Remove all books in category \"{name}\" from the shelf?",
+    "removedFromShelf": "Removed {removed} books from the shelf",
     "addCategoryConfirm": "Add {count} books from “{name}” and its subcategories to your shelf. Existing books will be skipped.",
     "addCategorySuccess": "Added {added} books and skipped {skipped}"
   },

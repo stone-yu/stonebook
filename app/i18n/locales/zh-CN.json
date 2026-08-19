@@ -397,6 +397,10 @@
     "addToShelf": "加入书架",
     "addCategoryToShelf": "将分类 {name} 加入书架",
     "addCategoryTitle": "批量加入书架",
+    "removeCategoryFromShelf": "将分类 {name} 移出书架",
+    "removeFromShelfTitle": "批量移出书架",
+    "removeFromShelfConfirm": "确定将分类「{name}」下的书籍移出书架？",
+    "removedFromShelf": "已移出 {removed} 本书",
     "addCategoryConfirm": "将“{name}”及其子分类中的 {count} 本书加入书架。已在书架中的图书会自动跳过。",
     "addCategorySuccess": "已加入 {added} 本，跳过 {skipped} 本"
   },

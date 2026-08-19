@@ -160,6 +160,34 @@ def add_books_to_shelf(session, reader_id, book_ids):
     return {"total": len(book_ids), "added": added, "skipped": len(book_ids) - added}
 
 
+def remove_books_from_shelf(session, reader_id, book_ids):
+    book_ids = list(dict.fromkeys(int(book_id) for book_id in book_ids))
+    if not book_ids:
+        return {"total": 0, "removed": 0, "skipped": 0}
+
+    states = {
+        state.book_id: state
+        for state in session.query(ReadingState)
+        .filter(ReadingState.reader_id == reader_id, ReadingState.book_id.in_(book_ids))
+        .all()
+    }
+
+    removed = 0
+    for book_id in book_ids:
+        state = states.get(book_id)
+        if state is not None and state.is_wants():
+            state.set_wants(False)
+            removed += 1
+
+    if removed:
+        session.query(ShelfCategoryBook).filter(
+            ShelfCategoryBook.reader_id == reader_id, ShelfCategoryBook.book_id.in_(book_ids)
+        ).delete(synchronize_session=False)
+
+    session.commit()
+    return {"total": len(book_ids), "removed": removed, "skipped": len(book_ids) - removed}
+
+
 def remove_book_from_shelf_categories(session, reader_id, book_id):
     session.query(ShelfCategoryBook).filter(
         ShelfCategoryBook.reader_id == reader_id, ShelfCategoryBook.book_id == book_id
