@@ -462,3 +462,85 @@ class TestScanDuplicateDetection(TestWithUserLogin):
 
             self.session.delete(row)
             self.session.commit()
+
+
+class TestScanDocTitle(TestWithUserLogin):
+    """doc/docx 应与 txt/pdf 走相同的文件名兜底元数据策略（标题取文件名、作者置“佚名”）。
+
+    docx 是 OOXML（zip+xml）现代格式，doc 是老二进制格式，Calibre 对两者的
+    元数据解析能力都不可靠；与 txt/pdf 一致，扫描记录直接用文件名作为标题。
+    """
+
+    def setUp(self):
+        self.session = self.get_app().settings["ScopedSession"]
+        self.session.rollback()
+        return super().setUp()
+
+    @mock.patch("calibre.ebooks.metadata.meta.get_metadata")
+    def test_docx_scan_uses_filename_not_metadata_title(self, mock_get_metadata):
+        """docx 元数据书名无意义时，扫描记录应使用文件名作为书名"""
+        from calibre.ebooks.metadata.book.base import Metadata
+
+        bad_mi = Metadata("副本", ["某作者"])
+        bad_mi.tags = []
+        bad_mi.publisher = None
+        mock_get_metadata.return_value = bad_mi
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            docx_path = os.path.join(tmpdir, "my_doc_book.docx")
+            with open(docx_path, "wb") as f:
+                f.write(b"PK\x03\x04 minimal docx")
+
+            ScanService().do_scan(tmpdir)
+
+            self.session.rollback()
+            row = self.session.query(ScanFile).filter(ScanFile.path == docx_path).first()
+            self.assertIsNotNone(row, "应当为 docx 文件创建ScanFile记录")
+            self.assertEqual(row.title, "my_doc_book", "docx 书名应使用文件名，不应是元数据中的'副本'")
+            self.assertEqual(row.author, "佚名", "docx 作者应被兜底置为'佚名'")
+
+            self.session.delete(row)
+            self.session.commit()
+
+    @mock.patch("calibre.ebooks.metadata.meta.get_metadata")
+    def test_docx_scan_uses_filename_when_metadata_fails(self, mock_get_metadata):
+        """docx 元数据解析失败时，扫描记录应使用文件名（不含扩展名）作为书名"""
+        mock_get_metadata.side_effect = Exception("failed to parse docx metadata")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            docx_path = os.path.join(tmpdir, "broken_doc.docx")
+            with open(docx_path, "wb") as f:
+                f.write(b"PK\x03\x04 minimal docx")
+
+            ScanService().do_scan(tmpdir)
+
+            self.session.rollback()
+            row = self.session.query(ScanFile).filter(ScanFile.path == docx_path).first()
+            self.assertIsNotNone(row, "解析失败时也应当为 docx 文件创建ScanFile记录")
+            self.assertEqual(row.title, "broken_doc", "docx 解析失败时书名应使用文件名（不含扩展名）")
+
+            self.session.delete(row)
+            self.session.commit()
+
+    @mock.patch("calibre.ebooks.metadata.meta.get_metadata")
+    def test_doc_scan_uses_filename_not_metadata_title(self, mock_get_metadata):
+        """老二进制 doc 格式同样应使用文件名作为书名"""
+        from calibre.ebooks.metadata.book.base import Metadata
+
+        mock_get_metadata.return_value = Metadata("副本", ["某作者"])
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            doc_path = os.path.join(tmpdir, "legacy_doc.doc")
+            with open(doc_path, "wb") as f:
+                f.write(b"\xd0\xcf\x11\xe0 minimal legacy doc")
+
+            ScanService().do_scan(tmpdir)
+
+            self.session.rollback()
+            row = self.session.query(ScanFile).filter(ScanFile.path == doc_path).first()
+            self.assertIsNotNone(row, "应当为 doc 文件创建ScanFile记录")
+            self.assertEqual(row.title, "legacy_doc", "doc 书名应使用文件名，不应是元数据中的'副本'")
+            self.assertEqual(row.author, "佚名", "doc 作者应被兜底置为'佚名'")
+
+            self.session.delete(row)
+            self.session.commit()

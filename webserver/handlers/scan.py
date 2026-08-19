@@ -17,7 +17,7 @@ from webserver.services.scan import ScanService
 
 
 CONF = loader.get_settings()
-SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
+SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt", "doc", "docx"]
 SCAN_DIR_PREFIX = "/imports/"  # 扫描来源固定在独立挂载，避免访问应用状态或正式书库
 
 

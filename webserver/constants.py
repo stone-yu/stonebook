@@ -37,7 +37,7 @@ BOOK_TYPE_EBOOK = "ebook"
 BOOK_TYPE_PHYSICAL = "physical"
 
 # 支持的电子书格式
-SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt", "azw"]
+SUPPORTED_EBOOK_FORMATS = ["azw3", "epub", "mobi", "pdf", "txt", "azw", "docx", "doc"]
 
 # 配置键名
 META_SELECTED_SOURCES = "META_SELECTED_SOURCES"

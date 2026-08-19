@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="让扫描已有目录与上传支持 doc/docx，元数据走文件名兜底。" />
+    <link rel="icon" href="data:," />
+    <title>扫描与上传支持 doc/docx · WIP</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7fb;
+        --panel: #ffffff;
+        --ink: #1f2937;
+        --muted: #5a6475;
+        --line: #d7dfeb;
+        --accent: #df6d16;
+        --accent-soft: #fff3e7;
+        --blue-soft: #eef5ff;
+        --green: #1f7a53;
+        --green-soft: #e7f5ee;
+        --warn-soft: #fff8eb;
+        --red: #a43d3d;
+        --red-soft: #fdecec;
+        --shadow: 0 12px 30px rgba(15, 23, 42, .08);
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+        --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: radial-gradient(circle at top right, rgba(223, 109, 22, .10), transparent 25%), linear-gradient(180deg, #fbfcff 0%, var(--bg) 100%);
+        font-family: var(--sans);
+        line-height: 1.68;
+      }
+      a { color: #315f91; text-underline-offset: 3px; }
+      a:focus-visible, [tabindex="0"]:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+      code, .mono { font-family: var(--mono); font-size: .9em; }
+      code { padding: .1em .34em; border-radius: 4px; background: #f0f3f8; overflow-wrap: anywhere; }
+      .skip-link { position: fixed; z-index: 20; top: 8px; left: 8px; padding: 8px 12px; color: #fff; background: var(--ink); transform: translateY(-160%); }
+      .skip-link:focus { transform: translateY(0); }
+
+      .page { width: min(1160px, calc(100vw - 32px)); margin: 0 auto; padding: 24px 0 56px; }
+      .hero, .card { background: var(--panel); border: 1px solid rgba(215, 223, 235, .95); border-radius: 20px; box-shadow: var(--shadow); }
+      .hero { position: relative; margin-bottom: 18px; padding: 32px 34px; overflow: hidden; }
+      .hero::after { position: absolute; right: -46px; bottom: -56px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(223, 109, 22, .18), rgba(223, 109, 22, 0)); content: ""; pointer-events: none; }
+      h1 { position: relative; z-index: 1; max-width: 1060px; margin: 0 0 10px; font-size: clamp(30px, 4vw, 48px); line-height: 1.12; letter-spacing: -.025em; }
+      .sub { position: relative; z-index: 1; max-width: 1060px; margin: 0; color: var(--muted); font-size: 17px; }
+      .chips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+      .chip { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 11px; border-radius: 999px; color: #536176; background: #eef2f7; font-size: 12px; font-weight: 700; }
+      .chip.wip { color: #9a4d0c; background: var(--accent-soft); }
+      .chip.active { color: var(--green); background: var(--green-soft); }
+      .chip.superseded { color: var(--red); background: var(--red-soft); }
+
+      .content-grid { display: block; }
+      .main-column { min-width: 0; }
+      .card { margin-bottom: 18px; padding: 26px 28px; scroll-margin-top: 18px; }
+      .card:last-child { margin-bottom: 0; }
+      h2 { margin: 0 0 15px; font-size: 23px; line-height: 1.25; }
+      h3 { margin: 22px 0 10px; font-size: 17px; line-height: 1.35; }
+      p { margin: 0 0 13px; }
+      p, li { color: #283548; font-size: 14px; }
+      ul, ol { margin: 10px 0 0 20px; padding: 0; }
+      li + li { margin-top: 6px; }
+
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .choice { padding: 17px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+      .choice h3 { margin-top: 0; }
+      .choice.recommended { border-color: #efbe8c; background: linear-gradient(180deg, #fffaf5 0%, #fff 100%); }
+      .callout { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: #f8fafc; }
+      .callout.warn { border-color: #f0d7a8; background: var(--warn-soft); }
+      .callout.good { border-color: #bddcc4; background: var(--green-soft); }
+      .callout.danger { border-color: #e3b0b0; background: var(--red-soft); }
+      .callout p:last-child, .choice p:last-child { margin-bottom: 0; }
+
+      .table-wrap { margin-top: 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+      table { width: 100%; min-width: 680px; border-collapse: collapse; background: #fff; font-size: 13px; }
+      th, td { padding: 11px 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      th { color: #556376; background: #f8fafc; font-size: 12px; }
+      th:last-child, td:last-child { border-right: 0; }
+      tr:last-child td { border-bottom: 0; }
+      pre { margin: 14px 0 0; padding: 15px 17px; overflow-x: auto; color: #eef3f8; background: #263244; border-radius: 14px; font: 13px/1.65 var(--mono); }
+      pre code { padding: 0; color: inherit; background: transparent; font: inherit; white-space: pre; }
+      .pending { color: #9a5c09; font-weight: 800; }
+      .verified { color: var(--green); font-weight: 800; }
+
+      .toc-edge { display: none; }
+      .toc-edge a { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 3px; align-items: center; width: 100%; min-height: 36px; padding: 6px 5px; color: #69778a; border-radius: 9px; text-decoration: none; }
+      .toc-edge a:hover { color: var(--accent); background: var(--accent-soft); }
+      .rail-index { font: 800 10px/1 var(--mono); text-align: center; }
+      .rail-title { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+      .toc-edge a[aria-current="location"] { color: #fff; background: #9a4d0c; box-shadow: 0 5px 14px rgba(154, 77, 12, .25); }
+
+      .toc-fab { position: fixed; z-index: 18; right: 18px; bottom: 18px; }
+      .toc-fab summary { display: flex; min-height: 46px; align-items: center; gap: 8px; padding: 10px 14px; color: #fff; background: #263244; border-radius: 999px; box-shadow: 0 10px 28px rgba(15, 23, 42, .22); cursor: pointer; font-size: 12px; font-weight: 800; list-style: none; }
+      .toc-fab summary::-webkit-details-marker { display: none; }
+      .toc-fab summary::before { color: #ffad6c; content: "≡"; font-size: 17px; line-height: 1; }
+      .toc-fab[open] summary { background: var(--accent); }
+      .toc-fab nav { position: absolute; right: 0; bottom: 56px; width: min(310px, calc(100vw - 36px)); padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 16px 42px rgba(15, 23, 42, .20); }
+      .toc-fab strong { display: block; padding: 7px 9px 10px; color: var(--muted); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+      .toc-fab a { display: block; padding: 9px 10px; color: #536176; border-radius: 9px; text-decoration: none; font-size: 13px; }
+      .toc-fab a:hover { background: var(--accent-soft); }
+      .toc-fab a[aria-current="location"] { color: #9a4d0c; background: var(--accent-soft); font-weight: 800; }
+      footer { margin-top: 16px; color: var(--muted); font-size: 12px; text-align: center; }
+
+      @media (min-width: 1440px) {
+        .toc-edge { position: fixed; z-index: 18; top: 50%; right: max(4px, calc((100vw - 1160px) / 2 - 136px)); display: flex; flex-direction: column; gap: 3px; width: 124px; padding: 8px; background: rgba(255, 255, 255, .96); border: 1px solid rgba(215, 223, 235, .98); border-radius: 16px; box-shadow: 0 10px 28px rgba(15, 23, 42, .13); transform: translateY(-50%); }
+        .toc-fab { display: none; }
+      }
+      @media (max-width: 720px) {
+        .page { width: calc(100vw - 20px); padding-top: 10px; }
+        .hero, .card { border-radius: 16px; }
+        .hero { padding: 24px 20px; }
+        h1 { font-size: clamp(28px, 9vw, 40px); }
+        .sub { font-size: 15px; }
+        .card { padding: 21px 19px; }
+        .grid { grid-template-columns: 1fr; }
+        .toc-fab { right: 10px; bottom: 10px; }
+      }
+      @media (max-width: 440px) {
+        .chip { width: fit-content; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      @page { margin: 14mm; }
+      @media print {
+        body { background: #fff; }
+        .page { width: 100%; padding: 0; }
+        .hero, .card { box-shadow: none; }
+        .content-grid { display: block; }
+        .toc-edge, .toc-fab, .skip-link { display: none; }
+        h1, h2, h3 { break-after: avoid; }
+        .choice, .callout, .table-wrap, pre { break-inside: avoid; }
+        a { color: inherit; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到正文</a>
+
+    <nav class="toc-edge" aria-label="章节目录">
+      <a href="#request" aria-current="location"><span class="rail-index">01</span><span class="rail-title">原始诉求</span></a>
+      <a href="#goals"><span class="rail-index">02</span><span class="rail-title">目标与边界</span></a>
+      <a href="#evidence"><span class="rail-index">03</span><span class="rail-title">现状与证据</span></a>
+      <a href="#design"><span class="rail-index">04</span><span class="rail-title">方案</span></a>
+      <a href="#impact"><span class="rail-index">05</span><span class="rail-title">影响与风险</span></a>
+      <a href="#tests"><span class="rail-index">06</span><span class="rail-title">测试结果</span></a>
+      <a href="#decisions"><span class="rail-index">07</span><span class="rail-title">决策记录</span></a>
+    </nav>
+
+    <details class="toc-fab">
+      <summary>目录</summary>
+      <nav aria-label="章节目录">
+        <strong>跳到章节</strong>
+        <a href="#request" aria-current="location">原始诉求</a>
+        <a href="#goals">目标与边界</a>
+        <a href="#evidence">现状与证据</a>
+        <a href="#design">方案</a>
+        <a href="#impact">影响与风险</a>
+        <a href="#tests">测试结果</a>
+        <a href="#decisions">决策记录</a>
+      </nav>
+    </details>
+
+    <div class="page">
+      <header class="hero">
+        <h1>扫描已有目录与上传支持 doc/docx</h1>
+        <p class="sub">当前扫描白名单 SCAN_EXT 只放行 6 种电子书格式，doc/docx 被静默丢弃。本方案把 doc/docx 加入扫描与上传白名单，并让两者复用 txt/pdf 的文件名兜底元数据策略。</p>
+        <div class="chips" aria-label="方案元信息">
+          <span class="chip wip">状态：WIP</span>
+          <span class="chip">创建日期：2026-08-19</span>
+          <span class="chip">所属模块：webserver</span>
+          <span class="chip">影响范围：扫描、上传、扫描导入元数据</span>
+          <span class="chip">需求来源：用户原话</span>
+        </div>
+      </header>
+
+      <div class="content-grid">
+        <main id="main-content" class="main-column">
+          <section id="request" class="card">
+            <h2>1. 原始诉求</h2>
+            <div class="callout warn">“目前扫描已有目录，好像无法扫描到 docx 文件，是不支持吗” → “做一下吧”</div>
+            <p>用户在管理后台用“扫描已有目录”功能时，发现目录里的 docx 文件不会被扫进候选列表。排查确认这不是扫描失败，而是扩展名白名单 SCAN_EXT 不含 docx，文件在过滤阶段被直接 continue 跳过。同一白名单还作用于普通上传与分片上传，所以 docx 当前既扫不进也传不上。</p>
+          </section>
+
+          <section id="goals" class="card">
+            <h2>2. 目标与边界</h2>
+            <div class="grid">
+              <article class="choice recommended"><h3>目标</h3><ul>
+                <li>“扫描已有目录”能识别 doc 与 docx，进入候选列表并可导入。</li>
+                <li>普通上传与分片上传放行 doc/docx（二者共用 SCAN_EXT，一并放开是必然结果）。</li>
+                <li>doc/docx 的元数据走文件名兜底：标题取文件名（去扩展名），作者置“佚名”，与 txt/pdf 现有策略一致。</li>
+                <li>不破坏现有 txt/pdf/epub 等格式的扫描、上传与查重行为。</li>
+              </ul></article>
+              <article class="choice"><h3>非目标</h3><ul>
+                <li>不做 doc/docx → epub/azw3 的格式转换（convert.py 的 CONVERSION_TARGETS 暂不动，作为后续独立工作）。</li>
+                <li>不解析 docx 内部 core.xml 的真实标题/作者（文件名兜底已满足入库诉求，core.xml 解析作为后续增强）。</li>
+                <li>不重构三处重复白名单为单一来源，保持现有结构，仅在原处各加 doc/docx。</li>
+                <li>不改变 OPDS 网络导入的正则（其已含 docx?）。</li>
+              </ul></article>
+            </div>
+          </section>
+
+          <section id="evidence" class="card">
+            <h2>3. 现状、根因与证据</h2>
+            <div class="table-wrap" role="region" aria-label="现状证据" tabindex="0">
+              <table>
+                <thead><tr><th>观察</th><th>权威证据</th><th>结论</th></tr></thead>
+                <tbody>
+                  <tr><td>扫描白名单不含 docx</td><td><code>webserver/services/scan.py:18</code> SCAN_EXT = ["azw","azw3","epub","mobi","pdf","txt"]</td><td>docx 在 scan.py:78-79 过滤处被 continue 跳过，不进 tasks</td></tr>
+                  <tr><td>白名单重复定义</td><td><code>webserver/handlers/scan.py:20</code> 同值；<code>webserver/constants.py:40</code> SUPPORTED_EBOOK_FORMATS 同值（grep 确认无引用，死代码）</td><td>三处都需同步加 doc/docx，否则行为不一致</td></tr>
+                  <tr><td>上传也用同一白名单</td><td><code>webserver/handlers/book.py:1422</code> 与 <code>:1547</code> 均 from webserver.handlers.scan import SCAN_EXT</td><td>加白名单会连带放开上传，符合目标</td></tr>
+                  <tr><td>上传魔数校验不波及 docx</td><td><code>webserver/handlers/book.py:1250</code> EBOOK_MAGIC 只含 epub/pdf；<code>:1428</code> 仅对 EBOOK_MAGIC 内格式校验</td><td>doc/docx 不校验魔数，放开上传安全</td></tr>
+                  <tr><td>兜底逻辑两处对称</td><td>do_scan <code>scan.py:210</code> 与 do_import <code>scan.py:288</code> 均 if fmt in ["txt","pdf"] 走文件名+佚名</td><td>doc/docx 需同时加入这两处条件，扫描与导入兜底才一致</td></tr>
+                  <tr><td>OPDS 导入已含 docx</td><td><code>webserver/services/opds_import.py:568,587</code> 正则含 docx?</td><td>证明项目其他路径考虑过 docx，扫描路径属遗漏</td></tr>
+                  <tr><td>Calibre 对 docx 元数据能力有限</td><td>scan.py:186/272 调 get_metadata(stream, stream_type=fmt)</td><td>选文件名兜底可规避 Calibre 解析不确定性</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="callout"><strong>事实与推断：</strong>get_metadata 对 docx 可能成功也可能抛错，但无论哪种，文件名兜底分支都会覆盖 title/authors，因此不依赖 Calibre 对 docx 的解析结果。.doc 为老二进制格式，Calibre 元数据解析更不可靠，同样由兜底保护。这两点由测试 mock get_metadata 的两种返回（成功带坏标题 / 抛异常）证伪。</div>
+          </section>
+
+          <section id="design" class="card">
+            <h2>4. 方案</h2>
+            <div class="callout good"><strong>方案结论：</strong>把 doc/docx 加入三处白名单与两处兜底条件，所有权不变（扫描仍由 ScanService.do_scan/do_import 负责，上传仍由 book.py 校验）。失败时由现有 try/except + 文件名兜底承接，不引入新数据结构。</div>
+
+            <h3>改动清单（5 处代码 + 测试）</h3>
+            <div class="table-wrap" role="region" aria-label="改动清单" tabindex="0">
+              <table>
+                <thead><tr><th>文件:行</th><th>改动</th></tr></thead>
+                <tbody>
+                  <tr><td><code>webserver/services/scan.py:18</code></td><td>SCAN_EXT 增加 "doc"、"docx"</td></tr>
+                  <tr><td><code>webserver/handlers/scan.py:20</code></td><td>SCAN_EXT 增加 "doc"、"docx"（上传共用）</td></tr>
+                  <tr><td><code>webserver/constants.py:40</code></td><td>SUPPORTED_EBOOK_FORMATS 增加 "docx"、"doc"（虽为死代码，保持一致）</td></tr>
+                  <tr><td><code>webserver/services/scan.py:210</code></td><td>do_scan 兜底条件 ["txt","pdf"] → ["txt","pdf","doc","docx"]</td></tr>
+                  <tr><td><code>webserver/services/scan.py:288</code></td><td>do_import 兜底条件 ["txt","pdf"] → ["txt","pdf","doc","docx"]</td></tr>
+                  <tr><td><code>tests/test_scan.py</code></td><td>新增 doc/docx 扫描走文件名兜底的用例，复用 TestScanPDFTitle 模式</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <pre aria-label="核心改动示例"><code># webserver/services/scan.py
+SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt", "doc", "docx"]
+
+# do_scan 与 do_import 的兜底条件（两处）
+if fmt in ["txt", "pdf", "doc", "docx"]:
+    mi.title = os.path.splitext(fname)[0]
+    mi.authors = [_("佚名")]</code></pre>
+          </section>
+
+          <section id="impact" class="card">
+            <h2>5. 影响范围、风险与回滚</h2>
+            <div class="grid">
+              <article class="choice recommended"><h3>影响范围</h3><p>代码：services/scan.py、handlers/scan.py、constants.py、tests/test_scan.py。行为：扫描目录与上传新增 doc/docx 支持；doc/docx 入库标题为文件名、作者为“佚名”。接口与数据结构不变。</p></article>
+              <article class="choice"><h3>保持不变</h3><p>epub/mobi/azw3/azw/pdf/txt 的扫描、上传、查重、元数据解析行为不变；格式转换链路（convert.py CONVERSION_TARGETS）不变；OPDS 导入正则不变。</p></article>
+            </div>
+            <div class="callout danger"><strong>主要风险：</strong>doc/docx 元数据为文件名+佚名，用户可能期望读到 docx 内部真实标题/作者 → 触发条件：扫描含真实元数据的 docx → 缓解：入库后可手动编辑或走豆瓣等元数据补全；真实元数据解析列入非目标后续增强。</div>
+            <div class="callout"><strong>回滚：</strong>纯代码改动，无数据迁移。回滚即从三处白名单与两处兜底条件移除 doc/docx，已入库的 doc/docx 书籍记录保留不受影响。</div>
+          </section>
+
+          <section id="tests" class="card">
+            <h2>6. 测试计划与结果</h2>
+            <div class="table-wrap" role="region" aria-label="测试计划与结果" tabindex="0">
+              <table>
+                <thead><tr><th>验证层</th><th>实际命令或页面</th><th>预期</th><th>结果</th></tr></thead>
+                <tbody>
+                  <tr><td>质量门禁</td><td><code>make lint-py</code>（实际为 <code>ruff check/format ./webserver</code>）</td><td>webserver 改动无 lint 错误、格式合规</td><td class="verified">通过：ruff check <code>All checks passed!</code>；ruff format <code>109 files already formatted</code></td></tr>
+                  <tr><td>质量门禁</td><td><code>ruff check tests/test_scan.py</code></td><td>新增 TestScanDocTitle 零 lint 错误</td><td class="verified">通过：新代码(467 行起)无错误；已有 5 处历史 lint 问题非本次引入且 tests 不在门禁范围</td></tr>
+                  <tr><td>单元</td><td><code>pytest tests/test_scan.py::TestScanDocTitle -v</code></td><td>doc/docx 扫描走文件名兜底：title=文件名、author=佚名</td><td class="pending">未执行（见下方本地环境限制）</td></tr>
+                  <tr><td>回归</td><td><code>make pytest</code> 全量</td><td>TestScanPDFTitle / TestImport / TestScanDuplicateDetection 等不回归</td><td class="pending">未执行（见下方本地环境限制）</td></tr>
+                  <tr><td>质量门禁</td><td><code>make check-design</code></td><td>方案路径、状态、HTML 与资源约束通过</td><td class="verified">通过（WIP 状态门禁“不可合并”为预期，转 ACTIVE 后消失）</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="callout warn"><strong>本地环境限制（pytest 未执行）：</strong>已穷尽本地验证路径并确认硬限制：① 本机 Calibre 是 <b>bypy frozen 包</b>（<code>python-lib.bypy.frozen</code>），只能在 calibre-debug 的 frozen 运行时 import，普通 venv python 无法 import calibre；② test_scan.py 的 import 链 <code>webserver.models</code> 需要 bcrypt 等 C 扩展，而 <b>calibre-debug 是签名进程，启用 macOS library validation，拒绝加载 .venv314 的 C 扩展</b>（不同 Team ID，ad-hoc 重签仍被拒）；③ .venv 为 3.11、Calibre 为 3.14，版本不匹配；④ Docker 不可用。二者不可兼得，本地无法运行 test_scan.py。lint 与 check-design 已本地通过，<b>pytest 需在 CI/Docker 环境验证</b>，故方案保持 WIP，待 CI 通过后再转 ACTIVE。</div>
+          </section>
+
+          <section id="decisions" class="card">
+            <h2>7. 决策记录</h2>
+            <ol>
+              <li><strong>2026-08-19：</strong>格式范围选定 doc + docx 都支持（用户澄清）。.doc 虽 Calibre 解析弱，但文件名兜底可保护入库。</li>
+              <li><strong>2026-08-19：</strong>元数据来源选定文件名兜底，与 txt/pdf 一致（用户澄清），不解析 docx core.xml。</li>
+              <li><strong>2026-08-19：</strong>影响范围选定扫描+上传放开，格式转换暂不做（用户澄清），CONVERSION_TARGETS 列入后续独立工作。</li>
+              <li><strong>2026-08-19：</strong>不重构三处白名单为单一来源，保持现有结构各加 doc/docx，避免超范围改动。</li>
+              <li><strong>2026-08-19：</strong>本地验证尝试：装 3.14 venv 配合 calibre-debug 跑 pytest，确认 calibre 为 bypy frozen 包、calibre-debug 启用 library validation 拒载外部 C 扩展，二者不可兼得，本地无法运行 test_scan.py；lint（ruff）与 check-design 已本地通过，pytest 留待 CI/Docker，方案保持 WIP。</li>
+            </ol>
+          </section>
+        </main>
+      </div>
+
+      <footer>Talebook internal design · webserver · WIP · 2026-08-19</footer>
+    </div>
+    <script>
+      (() => {
+        const sections = [...document.querySelectorAll(".main-column > section[id]")];
+        const tocLinks = [...document.querySelectorAll(".toc-edge a[href^='#'], .toc-fab a[href^='#']")];
+        const floatingToc = document.querySelector(".toc-fab");
+        if (!sections.length || !tocLinks.length) return;
+
+        let ticking = false;
+        const syncCurrentSection = () => {
+          ticking = false;
+          let currentSection = sections[0];
+          for (const section of sections) {
+            if (section.getBoundingClientRect().top <= 84) currentSection = section;
+            else break;
+          }
+          const currentHref = `#${currentSection.id}`;
+          for (const link of tocLinks) {
+            if (link.getAttribute("href") === currentHref) link.setAttribute("aria-current", "location");
+            else link.removeAttribute("aria-current");
+          }
+        };
+        const scheduleCurrentSectionSync = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(syncCurrentSection);
+        };
+
+        floatingToc?.addEventListener("click", (event) => {
+          if (event.target.closest("a")) floatingToc.open = false;
+        });
+        addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && floatingToc?.open) floatingToc.open = false;
+        });
+        addEventListener("scroll", scheduleCurrentSectionSync, { passive: true });
+        addEventListener("resize", scheduleCurrentSectionSync);
+        syncCurrentSection();
+      })();
+    </script>
+  </body>
+</html>

@@ -15,7 +15,7 @@ from webserver.services.autofill import AutoFillService
 from webserver.services.categories import CategoryError, assign_library_path, category_path_from_file
 
 
-SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt"]
+SCAN_EXT = ["azw", "azw3", "epub", "mobi", "pdf", "txt", "doc", "docx"]
 
 
 class ScanService(AsyncService):
@@ -207,7 +207,7 @@ class ScanService(AsyncService):
             # 作者也需要强制置为“佚名”，与do_import()保持一致，
             # 否则本步骤的查重会用文件原始（不可靠）的作者信息比对，
             # 与实际入库时使用的“佚名”作者不一致，导致已入库文件永远无法被判定为重复
-            if fmt in ["txt", "pdf"]:
+            if fmt in ["txt", "pdf", "doc", "docx"]:
                 mi.title = os.path.splitext(fname)[0]
                 mi.authors = [_("佚名")]
 
@@ -285,7 +285,7 @@ class ScanService(AsyncService):
                         mi.authors = [utils.super_strip(s) for s in mi.authors]
 
                         # 非结构化的格式，calibre无法识别准确的信息，直接从文件名提取
-                        if fmt in ["txt", "pdf"]:
+                        if fmt in ["txt", "pdf", "doc", "docx"]:
                             mi.title = fname.replace("." + fmt, "")
                             mi.authors = [_("佚名")]
             except FileNotFoundError:
